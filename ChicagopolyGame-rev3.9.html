@@ -1,0 +1,3780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0f1013">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Chicagopoly - 1920s Chicago Syndicate Territory War</title>
+<style>
+  :root {
+    --bg-dark: #0f1013;
+    --panel-bg: #191b22;
+    --gold: #d4af37;
+    --gold-bright: #fad86b;
+    --crimson: #8b0000;
+    --crimson-light: #c0392b;
+    --text-light: #f0f0f0;
+    --text-muted: #a0a6ad;
+    --board-bg: #eae3d2;
+    --tile-border: #383226;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  
+  html, body {
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    height: 100%;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: 'Segoe UI', 'Georgia', serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+  }
+
+  /* 5-SECOND STARTUP SPLASH SCREEN */
+  #splashScreen {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background: radial-gradient(circle at center, #252834 0%, #090a0d 90%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+  }
+  #splashScreen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .splash-box {
+    border: 3px double var(--gold);
+    padding: clamp(20px, 5vw, 50px);
+    background: rgba(10, 11, 14, 0.92);
+    border-radius: 12px;
+    box-shadow: 0 0 40px rgba(212, 175, 55, 0.35);
+    max-width: 90%;
+  }
+  .splash-box h1 {
+    font-size: clamp(2rem, 5vw, 3.6rem);
+    color: var(--gold);
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    text-shadow: 3px 3px 6px #000;
+  }
+  .splash-box .splash-subtitle {
+    font-size: clamp(0.9rem, 2vw, 1.35rem);
+    color: #e0e0e0;
+    letter-spacing: 2px;
+    margin: 12px 0 6px 0;
+    text-transform: uppercase;
+  }
+  .splash-box .splash-tagline {
+    font-size: clamp(0.75rem, 1.4vw, 0.95rem);
+    color: var(--gold-bright);
+    font-style: italic;
+    margin-bottom: 20px;
+  }
+  .splash-copyright {
+    position: absolute;
+    bottom: 12px;
+    right: 18px;
+    font-size: 0.75rem;
+    color: #888;
+    letter-spacing: 1px;
+  }
+
+  .btn {
+    background: linear-gradient(180deg, #383e4d 0%, #1e2128 100%);
+    color: var(--gold);
+    border: 1px solid var(--gold);
+    padding: 6px 10px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: clamp(0.68rem, 0.88vw, 0.78rem);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--gold);
+    color: #121316;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+  }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; border-color: #555; color: #777; }
+  
+  .btn-crimson {
+    background: linear-gradient(180deg, #a93226 0%, #641e16 100%);
+    border-color: #e74c3c;
+    color: #fff;
+  }
+  .btn-crimson:hover:not(:disabled) {
+    background: #e74c3c;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.6);
+  }
+
+  /* RESPONSIVE BOARD LAYOUT WITH 7x5 LANDSCAPE RATIO */
+  .main-layout {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    max-width: 1760px;
+    width: 100%;
+    height: 98dvh;
+  }
+
+  .board-wrapper {
+    aspect-ratio: 7 / 5;
+    width: min(calc(96dvh * 7 / 5), calc(100vw - 442px), 96vw);
+    max-height: 96dvh;
+    height: auto;
+    position: relative;
+  }
+
+  .board-container {
+    background-color: var(--board-bg);
+    border: 3px solid #3d3420;
+    border-radius: 6px;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: 12fr repeat(9, 9.77fr) 12fr;
+    grid-template-rows: 15fr repeat(9, 8.9fr) 15fr;
+    position: relative;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.5), 0 8px 25px rgba(0,0,0,0.7);
+  }
+
+  /* TILES & BADGES */
+  .tile {
+    border: 1px solid var(--tile-border);
+    position: relative;
+    background: #fdfbf7;
+    color: #111;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: filter 0.15s, background-color 0.3s;
+  }
+  .tile:hover { filter: brightness(0.92); }
+  .tile.destination-highlight {
+    background-color: #fff3cd !important;
+    outline: 3px solid var(--gold);
+    z-index: 5;
+  }
+
+  .tile-color-bar {
+    height: 15%;
+    width: 100%;
+    border-bottom: 1px solid #222;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  .tile.bottom .tile-color-bar { top: 0; }
+  .tile.top .tile-color-bar { top: auto; bottom: 0; border-bottom: none; border-top: 1px solid #222; }
+  .tile.left .tile-color-bar { height: 100%; width: 15%; right: 0; left: auto; top: 0; border-bottom: none; border-left: 1px solid #222; }
+  .tile.right .tile-color-bar { height: 100%; width: 15%; left: 0; top: 0; border-bottom: none; border-right: 1px solid #222; }
+
+  .tile-content-box {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1px;
+    z-index: 2;
+  }
+
+  .tile-name {
+    font-weight: 800;
+    line-height: 1.08;
+    text-transform: uppercase;
+    font-size: clamp(0.48rem, 0.82vw, 0.7rem);
+    text-align: center;
+    word-break: normal;
+    overflow-wrap: break-word;
+    margin: 1px 0;
+  }
+  
+  .tile-tribute {
+    font-weight: 700;
+    color: #222;
+    font-size: clamp(0.44rem, 0.78vw, 0.65rem);
+    text-align: center;
+  }
+
+  .corner-tile {
+    background: #ecd9b0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    padding: 3px;
+    font-size: clamp(0.5rem, 0.84vw, 0.7rem);
+    text-transform: uppercase;
+    line-height: 1.12;
+    color: #2c1a0e;
+    text-align: center;
+  }
+
+  .tile-owner-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: clamp(13px, 1.5vw, 19px);
+    height: clamp(13px, 1.5vw, 19px);
+    border-radius: 50%;
+    border: 1.5px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.9);
+    font-size: clamp(7px, 0.9vw, 10px);
+    font-weight: 900;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 8;
+    background: #444;
+  }
+
+  .tile-tokens {
+    position: absolute;
+    bottom: 2px;
+    left: 1px;
+    right: 1px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    pointer-events: none;
+    z-index: 10;
+  }
+  
+  .player-token-pin {
+    width: clamp(18px, 2.6vw, 28px);
+    height: clamp(18px, 2.6vw, 28px);
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 7px rgba(0,0,0,0.85);
+    font-size: clamp(9px, 1.3vw, 14px);
+    font-weight: 900;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 1px 1px 3px #000;
+    transition: transform 0.16s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .player-token-pin.hopping {
+    transform: scale(1.4) translateY(-12px);
+    box-shadow: 0 8px 16px rgba(212, 175, 55, 0.95);
+    border-color: var(--gold-bright);
+    z-index: 30;
+  }
+
+  .tile-enforcers {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    display: flex;
+    justify-content: flex-start;
+    gap: 1px;
+    font-size: clamp(6px, 0.8vw, 9px);
+    z-index: 4;
+  }
+  .tile.bottom .tile-enforcers { top: 15%; }
+  .tile.top .tile-enforcers { top: 2px; }
+
+  /* Board Center Hub */
+  .board-center {
+    grid-column: 2 / 11;
+    grid-row: 2 / 11;
+    background: radial-gradient(circle, #242730 0%, #15171d 85%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: clamp(6px, 1.2vw, 14px);
+    position: relative;
+    border: 2px dashed #4a3e26;
+  }
+
+  .center-logo-box {
+    text-align: center;
+    border: 1.5px solid var(--gold);
+    padding: 4px clamp(8px, 1.8vw, 16px);
+    background: rgba(0,0,0,0.65);
+    border-radius: 5px;
+    margin-bottom: 2px;
+  }
+  .center-logo-box h2 {
+    font-size: clamp(0.77rem, 1.54vw, 1.26rem);
+    color: var(--gold);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 4px #000;
+  }
+  .center-logo-box p {
+    color: var(--gold-bright);
+    font-size: clamp(0.42rem, 0.65vw, 0.52rem);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .deck-slots {
+    display: flex;
+    gap: clamp(6px, 1.5vw, 14px);
+    margin: 4px 0 auto 0;
+  }
+  .deck-card {
+    width: clamp(40px, 6vw, 60px);
+    height: clamp(25px, 4vw, 38px);
+    border: 1.5px dashed var(--gold);
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: clamp(0.42rem, 0.6vw, 0.52rem);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+  .deck-risk { background: #5c1f14; color: #ffb3a3; border-color: #e74c3c; }
+  .deck-petty { background: #174226; color: #b0eec6; border-color: #27ae60; }
+
+  /* Controls, Dice & Buttons */
+  .center-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,0,0,0.68);
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid #444;
+    width: 96%;
+    max-width: 480px;
+  }
+
+  .dice-display {
+    display: flex;
+    gap: clamp(16px, 2.5vw, 26px);
+    align-items: center;
+    justify-content: center;
+    margin: 2px 0;
+  }
+
+  .die {
+    width: clamp(62px, 7.5vw, 92px);
+    height: clamp(62px, 7.5vw, 92px);
+    background: #ffffff;
+    color: #0b0c0e;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(2.8rem, 4.8vw, 4.4rem);
+    font-weight: 900;
+    border: 3.5px solid #d4af37;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.7);
+    line-height: 1;
+  }
+  .die.rolling { transform: rotate(15deg) scale(1.1); }
+
+  .turn-announcer {
+    font-size: clamp(0.85rem, 1.25vw, 1.05rem);
+    color: var(--gold-bright);
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .btn-turn-action {
+    flex: 1;
+    max-width: 220px;
+    padding: 12px 18px;
+    font-size: clamp(0.85rem, 1.2vw, 1.05rem);
+    letter-spacing: 1.5px;
+    border-width: 2px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+
+  /* REORGANIZED SIDEBAR DASHBOARD */
+  .sidebar {
+    width: min(96vw, 430px);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    height: 96dvh;
+    justify-content: flex-start;
+  }
+
+  /* PLAYERS ON LEFT, STACKED WAR BUTTONS ON RIGHT */
+  .sidebar-top-section {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  .players-card {
+    flex: 1;
+    min-width: 0;
+    max-height: 48dvh;
+    overflow-y: auto;
+    background: var(--panel-bg);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .player-row {
+    display: flex;
+    align-items: center;
+    background: #23262f;
+    padding: 7px 9px;
+    border-radius: 5px;
+    border-left: 4px solid transparent;
+    transition: all 0.2s;
+  }
+  .player-row.active {
+    border-left-color: var(--gold);
+    background: #2f3440;
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
+  }
+  .player-row.bankrupt { opacity: 0.35; text-decoration: line-through; }
+
+  .player-identity { 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    width: 100%;
+  }
+  .player-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1px solid #fff;
+    flex-shrink: 0;
+  }
+  .player-details-inline {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    column-gap: 8px;
+    row-gap: 0;
+  }
+  /* MOBSTER NAME + CURRENT DOLLARS — doubled in v3.8 so the table reads at a
+     glance across the room. */
+  .player-name { font-weight: bold; font-size: 1.6rem; line-height: 1.12; white-space: nowrap; }
+  .player-cash { font-weight: 800; color: var(--gold-bright); font-size: 1.66rem; line-height: 1.12; white-space: nowrap; }
+  .player-status { color: #aaa; font-size: 0.76rem; }
+
+  /* VERTICAL STACK FOR SAVE / RESUME / RESTART.
+     v3.9: the labels are stacked on two lines ("SAVE" / "WAR") so every word
+     fits inside the button box — at 0.65rem the single-line "RESUME WAR"
+     overran the 100 px card. */
+  .war-stack-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: space-between;
+    width: 100px;
+    background: var(--panel-bg);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 6px;
+    flex-shrink: 0;
+  }
+  .war-stack-btn {
+    flex: 1;
+    padding: 5px 3px;
+    font-size: 0.65rem;
+    white-space: normal;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.12;
+  }
+  .war-stack-btn .wsb-lbl {
+    display: block;
+    width: 100%;
+    overflow-wrap: normal;
+    word-break: keep-all;
+  }
+
+  /* HORIZONTAL ACTION BAR (CUT A DEAL, MANAGE, DOSSIER) */
+  .top-nav-actions {
+    display: flex;
+    gap: 5px;
+    width: 100%;
+  }
+  .nav-btn {
+    flex: 1;
+    padding: 7px 4px;
+    font-size: 0.68rem;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  /* TAB CONTAINER */
+  .tabs-container {
+    background: var(--panel-bg);
+    border: 1px solid #333;
+    border-radius: 8px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .tab-headers {
+    display: flex;
+    background: #15171c;
+    border-bottom: 1px solid #333;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 8px 4px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+  }
+  .tab-btn.active {
+    color: var(--gold);
+    border-bottom: 2px solid var(--gold);
+    background: #23262f;
+  }
+
+  .tab-content {
+    flex: 1;
+    padding: 8px;
+    overflow-y: auto;
+    font-size: 0.78rem;
+  }
+
+  .log-entry {
+    margin-bottom: 5px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #262932;
+    line-height: 1.3;
+    font-size: 0.72rem;
+  }
+  .log-entry.crime { color: #f1948a; }
+  .log-entry.cash { color: #82e0aa; }
+  .log-entry.system { color: #f8c471; font-weight: bold; }
+
+  .activity-chip-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .activity-chip {
+    background: #232730;
+    padding: 6px;
+    border-radius: 4px;
+    border-left: 4px solid #888;
+    font-size: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 2px;
+    cursor: pointer;
+  }
+  .activity-chip:hover { filter: brightness(1.2); }
+  .activity-chip-name { font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .activity-chip-status { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 0.66rem; }
+
+  /* MODALS */
+  .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .modal-box {
+    background: var(--panel-bg);
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    width: 92%;
+    max-width: 600px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+    position: relative;
+  }
+  .modal-header {
+    border-bottom: 1px solid var(--gold);
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+    color: var(--gold);
+    font-size: 1.15rem;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.4rem;
+    cursor: pointer;
+  }
+  .modal-close:hover { color: #fff; }
+
+  .racket-card-view {
+    background: #fdfbf7;
+    color: #111;
+    border-radius: 6px;
+    border: 2px solid #222;
+    padding: 12px;
+    margin: 10px 0;
+  }
+  .racket-card-header {
+    padding: 6px;
+    text-align: center;
+    font-weight: 900;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 6px;
+    border-radius: 4px;
+  }
+  .racket-tribute-table {
+    width: 100%;
+    font-size: 0.78rem;
+    border-collapse: collapse;
+    margin-top: 6px;
+  }
+  .racket-tribute-table td { padding: 3px 5px; }
+  .racket-tribute-table td:last-child { text-align: right; font-weight: bold; }
+
+  .player-select-btn {
+    flex: 1;
+    padding: 10px;
+    font-size: 0.95rem;
+    font-weight: bold;
+    background: #252831;
+    border: 2px solid #555;
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .player-select-btn.selected, .player-select-btn:hover {
+    border-color: var(--gold);
+    background: #393e4d;
+    color: var(--gold);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
+  }
+
+  .c-brown { background-color: #6b3e26; color: #fff; }
+  .c-lightblue { background-color: #70b0d0; color: #111; }
+  .c-pink { background-color: #b5337a; color: #fff; }
+  .c-orange { background-color: #d35400; color: #fff; }
+  .c-red { background-color: #c0392b; color: #fff; }
+  .c-yellow { background-color: #d4ac0d; color: #111; }
+  .c-green { background-color: #1e8449; color: #fff; }
+  .c-darkblue { background-color: #1f3a93; color: #fff; }
+  .c-limo { background-color: #2c3e50; color: #fff; }
+  .c-arms { background-color: #566573; color: #fff; }
+  .c-special { background-color: #7f8c8d; color: #fff; }
+
+  .lore-term { color: var(--gold-bright); font-weight: bold; }
+  .rule-section { margin-bottom: 12px; line-height: 1.35; font-size: 0.82rem; }
+  .rule-section h3 { color: var(--gold); margin-bottom: 4px; font-size: 0.9rem; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 2px; }
+
+  /* ============ ONLINE MULTIPLAYER: LOBBY, CODE ENTRY, STATUS ============ */
+  .code-input {
+    width: 100%;
+    max-width: 230px;
+    display: block;
+    margin: 12px auto;
+    background: #16181d;
+    border: 2px solid var(--gold);
+    border-radius: 8px;
+    color: var(--gold-bright);
+    font-family: inherit;
+    font-size: clamp(1.6rem, 5vw, 2.2rem);
+    font-weight: 900;
+    letter-spacing: 0.42em;
+    text-align: center;
+    text-indent: 0.42em;
+    padding: 8px 0;
+    outline: none;
+  }
+  .code-input:focus { box-shadow: 0 0 12px rgba(212, 175, 55, 0.6); }
+  .code-input::placeholder { color: #4a4d57; letter-spacing: 0.42em; }
+
+  .net-error { color: #e74c3c; font-weight: bold; font-size: 0.8rem; min-height: 1.1em; margin-top: 4px; }
+  .net-hint  { color: var(--text-muted); font-size: 0.74rem; line-height: 1.35; margin-top: 8px; }
+
+  /* Lobby sign-on nag: blinks hard on and off in red until the war begins. */
+  @keyframes lobbyFlash {
+    0%, 49.9%   { opacity: 1; }
+    50%, 100%   { opacity: 0.05; }
+  }
+  .lobby-flash {
+    color: #ff2d20;
+    font-weight: bold;
+    font-size: 0.86rem;
+    animation: lobbyFlash 1.05s linear infinite;
+  }
+
+  .lobby-code {
+    text-align: center;
+    border: 1px dashed var(--gold);
+    border-radius: 8px;
+    background: rgba(0,0,0,0.55);
+    padding: 10px;
+    margin-bottom: 12px;
+  }
+  .lobby-code span { display: block; font-size: 0.68rem; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase; }
+  .lobby-code b { font-size: clamp(1.8rem, 6vw, 2.6rem); letter-spacing: 0.4em; text-indent: 0.4em; color: var(--gold-bright); }
+
+  .lobby-seat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #23262f;
+    border-left: 4px solid #444;
+    border-radius: 5px;
+    padding: 7px 10px;
+    margin-bottom: 5px;
+    font-size: 0.85rem;
+  }
+  .lobby-seat.empty { opacity: 0.42; border-left-style: dashed; font-style: italic; }
+  .lobby-seat .seat-tag {
+    margin-left: auto;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+  .lobby-seat .seat-tag.you { background: var(--gold); color: #121316; }
+  .lobby-seat .seat-tag.wait { border-color: #555; color: #888; }
+
+  #netToast {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translate(-50%, 24px);
+    background: rgba(0,0,0,0.94);
+    border: 1px solid var(--gold);
+    color: var(--gold-bright);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 0.82rem;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    z-index: 12000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    max-width: 90vw;
+    text-align: center;
+  }
+  #netToast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  .net-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--panel-bg);
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    padding: 5px 8px;
+    font-size: 0.66rem;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--gold-bright);
+    text-align: center;
+    line-height: 1.25;
+  }
+  .net-pill .pip {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #555; flex-shrink: 0;
+  }
+  .net-pill.live .pip { background: #27ae60; box-shadow: 0 0 7px #27ae60; }
+  .net-pill.dead .pip { background: #e74c3c; box-shadow: 0 0 7px #e74c3c; }
+  .net-pill.hidden { display: none; }
+
+  .mirror-note {
+    margin-top: 10px;
+    font-size: 0.72rem;
+    color: var(--gold-bright);
+    background: rgba(212, 175, 55, 0.09);
+    border: 1px dashed #6b5a24;
+    border-radius: 5px;
+    padding: 6px 8px;
+    text-align: center;
+  }
+
+  /* UNDERWORLD BIDDING — one boss, one set of controls (v3.8) */
+  .bid-row { flex-wrap: wrap; row-gap: 8px; }
+  .bid-row .bid-you,
+  .bid-row .bid-top {
+    display: none;
+    margin-left: 6px;
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+  .bid-row .bid-top {
+    display: inline-block;
+    border: 1px solid var(--gold);
+    color: var(--gold-bright);
+  }
+  .bid-row.bid-mine .bid-you {
+    display: inline-block;
+    background: var(--gold);
+    color: #121316;
+  }
+  .bid-row .bid-lock {
+    color: var(--text-muted);
+    font-size: 0.74rem;
+    font-style: italic;
+  }
+  /* A rival's bid controls stay on show for information only — dimmed and
+     out of reach, because that boss bids from their own screen. */
+  .bid-row.bid-locked .bid-controls {
+    opacity: 0.28;
+    filter: grayscale(1);
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<!-- 5-SECOND SPLASH SCREEN -->
+<div id="splashScreen">
+  <div class="splash-box">
+    <h1>CHICAGOPOLY</h1>
+    <div class="splash-subtitle">1920-1940 Chicago Syndicate Operations</div>
+    <div class="splash-tagline">Capone, Torrio, Nitti & Moran Territory</div>
+    <button class="btn" style="padding: 12px 28px; font-size: 1rem;" onclick="handleUserDismissSplash()">Enter Chicago</button>
+  </div>
+  <div class="splash-copyright">copyright 2026 BGB · Chicagopoly v3.9</div>
+</div>
+
+<!-- ============ ONLINE MULTIPLAYER: ENTRY / CREATE / JOIN / LOBBY ============ -->
+
+<!-- Landing choice: new game or join by code -->
+<div class="modal-overlay" id="entryModal">
+  <div class="modal-box" style="max-width: 520px; text-align: center;">
+    <div class="modal-header"><span>Syndicate Assembly</span></div>
+    <p style="color: var(--gold-bright); font-size: 0.9rem; margin-bottom: 6px;">
+      Up to <strong>4 Mob Bosses</strong> per game.
+    </p>
+    <p style="color: var(--text-muted); font-size: 0.78rem; margin-bottom: 16px;">
+      Each boss can sign on from their own phone — or pass a single device around.
+    </p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button class="btn" style="padding: 14px; font-size: 0.95rem;" onclick="openCreateGame()">Start a New Game</button>
+      <button class="btn" style="padding: 14px; font-size: 0.95rem;" onclick="openJoinGame()">Join an Existing Game</button>
+      <button class="btn btn-crimson" style="padding: 11px; font-size: 0.82rem;" onclick="startLocalGame()">Pass &amp; Play (single device)</button>
+    </div>
+  </div>
+</div>
+
+<!-- Host: choose the 4-digit room code -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal-box" style="max-width: 470px; text-align: center;">
+    <div class="modal-header">
+      <span>Open a Syndicate Line</span>
+      <button class="modal-close" onclick="closeModal('createModal')">&times;</button>
+    </div>
+    <p style="font-size: 0.85rem;">Choose the <strong>4-digit code</strong> the other bosses will use to join your game.</p>
+    <input type="text" id="hostCodeInput" class="code-input" inputmode="numeric" pattern="[0-9]*"
+           maxlength="4" autocomplete="off" placeholder="0000">
+    <p class="net-error" id="createError"></p>
+    <button class="btn" style="width: 100%; padding: 12px; font-size: 0.92rem;" onclick="hostGame()">Create Game &amp; Open Lobby</button>
+    <p class="net-hint">Share the code. Bosses are dealt in the order they sign on.</p>
+  </div>
+</div>
+
+<!-- Guest: enter the 4-digit room code -->
+<div class="modal-overlay" id="joinModal">
+  <div class="modal-box" style="max-width: 470px; text-align: center;">
+    <div class="modal-header">
+      <span>Call the Syndicate Line</span>
+      <button class="modal-close" onclick="closeModal('joinModal')">&times;</button>
+    </div>
+    <p style="font-size: 0.85rem;">Enter the <strong>4-digit code</strong> the host gave you.</p>
+    <input type="text" id="joinCodeInput" class="code-input" inputmode="numeric" pattern="[0-9]*"
+           maxlength="4" autocomplete="off" placeholder="0000">
+    <p class="net-error" id="joinError"></p>
+    <button class="btn" style="width: 100%; padding: 12px; font-size: 0.92rem;" onclick="joinGame()">Join Game</button>
+    <p class="net-hint">Your mobster is assigned by sign-on order.</p>
+  </div>
+</div>
+
+<!-- Lobby: roster in sign-on order -->
+<div class="modal-overlay" id="lobbyModal">
+  <div class="modal-box" style="max-width: 540px;">
+    <div class="modal-header"><span>Syndicate Lobby</span></div>
+    <div class="lobby-code">
+      <span>Room Code — share this</span>
+      <b id="lobbyCodeText">----</b>
+    </div>
+    <div id="lobbyRoster"></div>
+    <p class="net-error" id="lobbyError"></p>
+    <p class="net-hint" id="lobbyStatus">Waiting for bosses to sign on…</p>
+    <div id="lobbyActions" style="margin-top: 12px;"></div>
+  </div>
+</div>
+
+<div id="netToast"></div>
+
+<div class="main-layout">
+  <!-- SCALABLE BOARD (7x5 ASPECT RATIO) -->
+  <div class="board-wrapper">
+    <div class="board-container" id="board">
+      <div class="board-center">
+        <div class="center-logo-box">
+          <h2>CHICAGOPOLY</h2>
+          <p>Syndicate Territory War</p>
+        </div>
+
+        <!-- RISK & PETTY CASH DECKS -->
+        <div class="deck-slots">
+          <div class="deck-card deck-risk">
+            <span>RISK</span>
+          </div>
+          <div class="deck-card deck-petty">
+            <span>PETTY CASH</span>
+          </div>
+        </div>
+
+        <!-- CONTROLS, DICE & BUTTONS -->
+        <div class="center-controls">
+          <div class="turn-announcer" id="turnAnnouncer">Boss Al Capone's Move</div>
+          <div class="dice-display">
+            <div class="die" id="die1">⚀</div>
+            <div class="die" id="die2">⚀</div>
+          </div>
+          <div style="display:flex; gap:12px; width:100%; justify-content:center;">
+            <button class="btn btn-turn-action" id="btnRoll" onclick="handleRollDice()">Roll Dice</button>
+            <button class="btn btn-turn-action" id="btnEndTurn" onclick="handleEndTurn()" disabled>End Turn</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REORGANIZED SIDEBAR -->
+  <div class="sidebar">
+    <!-- TOP ROW: PLAYERS ON LEFT, BUTTON STACK ON RIGHT -->
+    <div class="sidebar-top-section">
+      <div class="players-card" id="playersContainer"></div>
+      <div class="war-stack-card">
+        <div class="net-pill hidden" id="netPill"><span class="pip"></span><span id="netPillText">Offline</span></div>
+        <button class="btn war-stack-btn" onclick="saveGame()"><span class="wsb-lbl">💾 Save<br>War</span></button>
+        <button class="btn war-stack-btn" onclick="loadGame()"><span class="wsb-lbl">📂 Resume<br>War</span></button>
+        <button class="btn war-stack-btn" onclick="openSetupModal()"><span class="wsb-lbl">Restart<br>War</span></button>
+      </div>
+    </div>
+
+    <!-- HORIZONTAL BUTTON ROW DIRECTLY ABOVE TABS -->
+    <div class="top-nav-actions">
+      <button class="btn nav-btn" onclick="openTradeModal()">Cut a Deal</button>
+      <button class="btn nav-btn" onclick="openManageModal()">Manage Rackets</button>
+      <button class="btn nav-btn" onclick="openInstructionsModal()">Syndicate Dossier</button>
+    </div>
+
+    <!-- TABBED SECTION (WIRE & PORTFOLIO) -->
+    <div class="tabs-container">
+      <div class="tab-headers">
+        <button class="tab-btn active" onclick="switchTab('log')">Syndicate Wire</button>
+        <button class="tab-btn" onclick="switchTab('portfolio')">Rackets Controlled</button>
+      </div>
+
+      <div class="tab-content" id="tabLog">
+        <div id="gameLog"></div>
+      </div>
+
+      <div class="tab-content" id="tabPortfolio" style="display:none;">
+        <div id="portfolioDisplay">Select a racket to station Hit Men or adjust finances.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+
+<!-- Setup Modal (Select 1-4 Bosses) -->
+<div class="modal-overlay" id="setupModal">
+  <div class="modal-box" style="max-width: 500px; text-align: center;">
+    <div class="modal-header">
+      <span>Syndicate Formation</span>
+    </div>
+    <p style="margin-bottom: 14px; color: var(--gold-bright); font-size: 0.9rem;">Select the number of rival Mob Bosses (1 to 4):</p>
+    
+    <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+      <button class="player-select-btn" onclick="selectPlayerCount(1)" id="pcount-1">1 Boss</button>
+      <button class="player-select-btn" onclick="selectPlayerCount(2)" id="pcount-2">2 Bosses</button>
+      <button class="player-select-btn" onclick="selectPlayerCount(3)" id="pcount-3">3 Bosses</button>
+      <button class="player-select-btn selected" onclick="selectPlayerCount(4)" id="pcount-4">4 Bosses</button>
+    </div>
+
+    <div id="selectedBossesList" style="text-align: left; background: #232730; padding: 10px; border-radius: 6px; margin-bottom: 14px; font-size: 0.8rem; line-height: 1.5;">
+    </div>
+
+    <button class="btn" style="width: 100%; padding: 10px; font-size: 0.95rem;" onclick="confirmStartGame()">Begin Syndicate War</button>
+  </div>
+</div>
+
+<!-- Action Modal -->
+<div class="modal-overlay" id="actionModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span id="actionTitle">Syndicate Decision</span>
+    </div>
+    <div id="actionBody"></div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;" id="actionButtons"></div>
+  </div>
+</div>
+
+<!-- Expanded Instructions Modal -->
+<div class="modal-overlay" id="instructionsModal">
+  <div class="modal-box" style="max-width: 650px;">
+    <div class="modal-header">
+      <span>Syndicate Dossier & Operation Rules</span>
+      <button class="modal-close" onclick="closeModal('instructionsModal')">&times;</button>
+    </div>
+    
+    <div class="rule-section">
+      <h3>1. Underworld Objective & Quick Play</h3>
+      <p>Bankrupt every rival mob family and seize complete authority over Prohibition-era Chicago. <strong>Note: All street tributes and penalties have been doubled</strong> to accelerate mob bankruptcies and shorten game length.</p>
+    </div>
+
+    <div class="rule-section">
+      <h3>2. Acquirable Rackets vs. Municipal Squares</h3>
+      <p><span class="lore-term">Why can only some squares be bought or auctioned?</span></p>
+      <p>• <strong>Acquirable Rackets (28 Squares):</strong> The 22 color-grouped illegal businesses, 4 Syndicate Limousines, and 2 Munitions Rings are private criminal operations[cite: 4]. When landed on while unowned, the active boss can seize them for the listed price or send them to open syndicate auction[cite: 4].</p>
+      <p>• <strong>Municipal / Event Squares (12 Squares):</strong> Squares such as <em>The Big Payoff ($200 circuit reward)</em>, <em>Risk</em>, <em>Petty Cash</em>, <em>Police Payoff / Tax Audits</em>, <em>Safe Haven</em>, and <em>Cook County Jail</em> represent public city infrastructure or unexpected underworld events[cite: 4]. They cannot be purchased or owned by any boss[cite: 4].</p>
+      <p>• <strong>Private Bidding (networked war):</strong> when a racket goes to open syndicate auction, each boss bids or folds from their own screen with their own cash. Rival bid controls are shown dimmed and out of reach — nobody can spend another mob's money.</p>
+    </div>
+
+    <div class="rule-section">
+      <h3>3. Doubled Protection Tributes & Enforcers</h3>
+      <p>• <strong>Stationing Hit Men:</strong> Once you own all rackets of a single color group, you can station up to 4 Hit Men per racket to drastically hike the tribute demanded from rivals[cite: 4].</p>
+      <p>• <strong>Promoting to Made Men:</strong> Stationing a 5th tier of muscle promotes the racket to an untouchable <em>Made Man</em>, yielding the maximum possible extortion payout[cite: 4].</p>
+      <p>• <strong>Syndicate Limousines (4):</strong> Tribute scales with each additional car owned ($50, $100, $200, $400)[cite: 4].</p>
+      <p>• <strong>Munitions Rings (2):</strong> Tribute equals <strong>8x the dice roll</strong> if 1 is owned, or <strong>20x the dice roll</strong> if both arms dealers are controlled[cite: 4].</p>
+    </div>
+
+    <div class="rule-section">
+      <h3>4. Cook County Jail & Pardon Cards</h3>
+      <p>If locked in Cook County Jail (via 3 consecutive doubles, landing on Federal Raid, or drawing an arrest warrant), you have 3 ways to get out on your turn:</p>
+      <p>1. <strong>Use a Jail Release Pardon Card:</strong> Expends your card and immediately frees you to roll and move[cite: 4].</p>
+      <p>2. <strong>Pay $50 Lawyer Bail:</strong> Pay a $50 fine before rolling[cite: 4].</p>
+      <p>3. <strong>Roll for Doubles:</strong> Attempt to roll doubles[cite: 4]. If successful, you move immediately without penalty[cite: 4]. If you fail 3 times, you must pay $50 and advance[cite: 4].</p>
+    </div>
+
+    <div class="rule-section">
+      <h3>5. Saving & Resuming Games</h3>
+      <p>Click <strong>"Save War"</strong> in the sidebar at any point[cite: 4]. Your entire game (cash, rackets, enforcers, turn order) is saved in your browser and can be resumed at any time using <strong>"Resume War"</strong>[cite: 4].</p>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top: 10px;">
+      <span style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 1px;">Chicagopoly — revision 3.9</span>
+      <button class="btn" onclick="closeModal('instructionsModal')">Dismiss Dossier</button>
+    </div>
+  </div>
+</div>
+
+<!-- Trade Modal -->
+<div class="modal-overlay" id="tradeModal">
+  <div class="modal-box" style="max-width: 600px;">
+    <div class="modal-header">
+      <span>Cut a Deal (Syndicate Negotiations)</span>
+      <button class="modal-close" onclick="closeModal('tradeModal')">&times;</button>
+    </div>
+    <div id="tradeContainer"></div>
+  </div>
+</div>
+
+<!-- PeerJS powers the phone-to-phone connection (WebRTC data channels). -->
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+// --- FULLSCREEN CONTROLLER ---
+function triggerFullscreen() {
+  const doc = document.documentElement;
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    if (doc.requestFullscreen) {
+      doc.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
+    } else if (doc.webkitRequestFullscreen) {
+      doc.webkitRequestFullscreen();
+    }
+  }
+}
+
+// Strip <br> tags for clean rendering in logs, dialogs, and text contexts
+function cleanName(str) {
+  return (str || '').replace(/<br\s*[\/]?>/gi, ' ');
+}
+
+// --- SOUND SYNTHESIZER (WEB AUDIO API) ---
+const SoundFX = {
+  ctx: null,
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioCtx();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  },
+  playDiceRoll() {
+    this.init();
+    const now = this.ctx.currentTime;
+    for (let i = 0; i < 7; i++) {
+      const t = now + i * 0.06;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(120 + Math.random() * 180, t);
+      gain.gain.setValueAtTime(0.2, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.05);
+    }
+  },
+  playHop() {
+    this.init();
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(360, now);
+    osc.frequency.exponentialRampToValueAtTime(90, now + 0.09);
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.09);
+  },
+  playCash() {
+    this.init();
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(587.33, now);
+    osc.frequency.setValueAtTime(880, now + 0.09);
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.3);
+  },
+  playShakedown() {
+    this.init();
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.linearRampToValueAtTime(90, now + 0.25);
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.25);
+  },
+  playArrest() {
+    this.init();
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(440, now);
+    osc.frequency.linearRampToValueAtTime(220, now + 0.25);
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.3);
+  }
+};
+
+// --- MASTER DEFINITIONS ---
+const ALL_BOSSES = [
+  { id: 0, name: "Al Capone", color: "#c0392b" },
+  { id: 1, name: "Johnny Torrio", color: "#2980b9" },
+  { id: 2, name: "Frank Nitti", color: "#27ae60" },
+  { id: 3, name: "Bugs Moran", color: "#8e44ad" }
+];
+
+let chosenPlayerCount = 4;
+
+// CONSTRAINED PROPERTY NAMES:
+// Horizontal: Maximum 8 total characters per line. Up to 3 lines (plus price).
+// Vertical: Maximum 9 total characters per line. Up to 2 lines (plus price).
+const TILE_DATA = [
+  /* 0 - 10: BOTTOM ROW (HORIZONTAL: <= 8 CHARS PER LINE, <= 3 LINES) */
+  { id: 0, name: "The Big<br>Payoff", type: "go", price: 0, rent: [0], color: "special" },
+  { id: 1, name: "Alky<br>Cooker<br>Still", type: "activity", group: "brown", price: 60, rent: [4, 20, 60, 180, 320, 500], houseCost: 50, color: "brown" },
+  { id: 2, name: "Petty<br>Cash", type: "petty", price: 0, color: "special" },
+  { id: 3, name: "Bootleg<br>Stills", type: "activity", group: "brown", price: 60, rent: [8, 40, 120, 360, 640, 900], houseCost: 50, color: "brown" },
+  { id: 4, name: "Police<br>Payoff", type: "tax", price: 200, color: "special" },
+  { id: 5, name: "Cadillac<br>Limo", type: "limo", price: 200, rent: [50, 100, 200, 400], color: "limo" },
+  { id: 6, name: "Punch<br>Boards", type: "activity", group: "lightblue", price: 100, rent: [12, 60, 180, 540, 800, 1100], houseCost: 50, color: "lightblue" },
+  { id: 7, name: "Risk", type: "risk", price: 0, color: "special" },
+  { id: 8, name: "Policy<br>Numbers<br>Game", type: "activity", group: "lightblue", price: 100, rent: [12, 60, 180, 540, 800, 1100], houseCost: 50, color: "lightblue" },
+  { id: 9, name: "OTB<br>Betting<br>Parlor", type: "activity", group: "lightblue", price: 120, rent: [16, 80, 200, 600, 900, 1200], houseCost: 50, color: "lightblue" },
+  { id: 10, name: "County<br>Jail", type: "jail", price: 0, color: "special" },
+
+  /* 11 - 19: LEFT COLUMN (VERTICAL: <= 9 CHARS PER LINE, <= 2 LINES) */
+  { id: 11, name: "Laundry<br>Shakedown", type: "activity", group: "pink", price: 140, rent: [20, 100, 300, 900, 1250, 1500], houseCost: 100, color: "pink" },
+  { id: 12, name: "Tommy<br>Guns", type: "arms", price: 150, color: "arms" },
+  { id: 13, name: "Bakery<br>Racket", type: "activity", group: "pink", price: 140, rent: [20, 100, 300, 900, 1250, 1500], houseCost: 100, color: "pink" },
+  { id: 14, name: "Pineapple<br>Bombs", type: "activity", group: "pink", price: 160, rent: [24, 120, 360, 1000, 1400, 1800], houseCost: 100, color: "pink" },
+  { id: 15, name: "Lincoln<br>Limo", type: "limo", price: 200, rent: [50, 100, 200, 400], color: "limo" },
+  { id: 16, name: "Blind<br>Pig", type: "activity", group: "orange", price: 180, rent: [28, 140, 400, 1100, 1500, 1900], houseCost: 100, color: "orange" },
+  { id: 17, name: "Petty<br>Cash", type: "petty", price: 0, color: "special" },
+  { id: 18, name: "Hidden<br>Brewery", type: "activity", group: "orange", price: 180, rent: [28, 140, 400, 1100, 1500, 1900], houseCost: 100, color: "orange" },
+  { id: 19, name: "Four<br>Deuces", type: "activity", group: "orange", price: 200, rent: [32, 160, 440, 1200, 1600, 2000], houseCost: 100, color: "orange" },
+
+  /* 20 - 30: TOP ROW (HORIZONTAL: <= 8 CHARS PER LINE, <= 3 LINES) */
+  { id: 20, name: "Safe<br>Haven", type: "parking", price: 0, color: "special" },
+  { id: 21, name: "Street<br>Corner<br>Loans", type: "activity", group: "red", price: 220, rent: [36, 180, 500, 1400, 1750, 2100], houseCost: 150, color: "red" },
+  { id: 22, name: "Risk", type: "risk", price: 0, color: "special" },
+  { id: 23, name: "20%<br>Juice<br>Racket", type: "activity", group: "red", price: 220, rent: [36, 180, 500, 1400, 1750, 2100], houseCost: 150, color: "red" },
+  { id: 24, name: "Debt<br>Muscle", type: "activity", group: "red", price: 240, rent: [40, 200, 600, 1500, 1850, 2200], houseCost: 150, color: "red" },
+  { id: 25, name: "Packard<br>Eight<br>Limo", type: "limo", price: 200, rent: [50, 100, 200, 400], color: "limo" },
+  { id: 26, name: "Freight<br>Hijack", type: "activity", group: "yellow", price: 260, rent: [44, 220, 660, 1600, 1950, 2300], houseCost: 150, color: "yellow" },
+  { id: 27, name: "Lakes<br>Rum<br>Runner", type: "activity", group: "yellow", price: 260, rent: [44, 220, 660, 1600, 1950, 2300], houseCost: 150, color: "yellow" },
+  { id: 28, name: "Weapons<br>Cache", type: "arms", price: 150, color: "arms" },
+  { id: 29, name: "Train<br>Hijack", type: "activity", group: "yellow", price: 280, rent: [48, 240, 720, 1700, 2050, 2400], houseCost: 150, color: "yellow" },
+  { id: 30, name: "Federal<br>Raid!", type: "gotojail", price: 0, color: "special" },
+
+  /* 31 - 39: RIGHT COLUMN (VERTICAL: <= 9 CHARS PER LINE, <= 2 LINES) */
+  { id: 31, name: "Union<br>Dues", type: "activity", group: "green", price: 300, rent: [52, 260, 780, 1800, 2200, 2550], houseCost: 200, color: "green" },
+  { id: 32, name: "Pension<br>Scam", type: "activity", group: "green", price: 300, rent: [52, 260, 780, 1800, 2200, 2550], houseCost: 200, color: "green" },
+  { id: 33, name: "Petty<br>Cash", type: "petty", price: 0, color: "special" },
+  { id: 34, name: "Studio<br>Shakedown", type: "activity", group: "green", price: 320, rent: [56, 300, 900, 2000, 2400, 2800], houseCost: 200, color: "green" },
+  { id: 35, name: "Phaeton<br>Limo", type: "limo", price: 200, rent: [50, 100, 200, 400], color: "limo" },
+  { id: 36, name: "Risk", type: "risk", price: 0, color: "special" },
+  { id: 37, name: "Brothel", type: "activity", group: "darkblue", price: 350, rent: [70, 350, 1000, 2200, 2600, 3000], houseCost: 200, color: "darkblue" },
+  { id: 38, name: "Tax<br>Audit", type: "tax", price: 100, color: "special" },
+  { id: 39, name: "Call<br>Girls", type: "activity", group: "darkblue", price: 400, rent: [100, 400, 1200, 2800, 3400, 4000], houseCost: 200, color: "darkblue" }
+];
+
+const GROUP_MEMBERS = {
+  brown: [1, 3],
+  lightblue: [6, 8, 9],
+  pink: [11, 13, 14],
+  orange: [16, 18, 19],
+  red: [21, 23, 24],
+  yellow: [26, 27, 29],
+  green: [31, 32, 34],
+  darkblue: [37, 39],
+  limo: [5, 15, 25, 35],
+  arms: [12, 28]
+};
+
+const RISK_CARDS = [
+  { text: "Advance directly to The Big Payoff. Collect $200 syndicate tribute.", action: "move", target: 0 },
+  { text: "Take an armored ride to Studio Shakedown.", action: "move", target: 34 },
+  { text: "Rival crew tips the Feds! Go directly to Cook County Jail.", action: "jail" },
+  { text: "Arson cleanup assessments! Pay $50 per Hit Man and $200 per Made Man.", action: "repairs", house: 50, hotel: 200 },
+  { text: "The Eliot Ness task force impounds bootleg supplies. Pay $100 fine.", action: "cash", amount: -100 },
+  { text: "You bribe a high-ranking judge. Jail Release Pardon card.", action: "jailcard" },
+  { text: "Freight hijack successful! Collect $200 black market payout.", action: "cash", amount: 200 },
+  { text: "Elected Capo di Tutti Capi. Pay each syndicate boss $50 tribute.", action: "payplayers", amount: 50 }
+];
+
+const PETTY_CASH_CARDS = [
+  { text: "Unmarked gambling cash found in floor safe. Collect $200.", action: "cash", amount: 200 },
+  { text: "Doctor treats gunshot wound off the record. Pay $50 hush money.", action: "cash", amount: -50 },
+  { text: "Speakeasy weekend profits exceed expectations. Collect $100.", action: "cash", amount: 100 },
+  { text: "Corrupt City Hall contact dismisses charges. Jail Release Pardon card.", action: "jailcard" },
+  { text: "Pay protection shakedown insurance to city inspectors. Pay $100.", action: "cash", amount: -100 },
+  { text: "It's your birthday! Collect $20 cash envelope from every boss.", action: "collectplayers", amount: 20 },
+  { text: "Stock swindle yields dividends. Collect $100.", action: "cash", amount: 100 },
+  { text: "Federal liquor tax evasion assessment. Pay $150.", action: "cash", amount: -150 }
+];
+
+// --- ACTIVE GAME STATE ---
+let players = [];
+let boardState = {}; 
+let activePlayerIndex = 0;
+let doubleCount = 0;
+let hasRolled = false;
+let isMoving = false;
+let currentDice = [1, 1];
+let splashTimeout = null;
+
+// --- SPLASH SCREEN LOGIC ---
+function handleUserDismissSplash() {
+  triggerFullscreen();
+  dismissSplash();
+}
+
+function dismissSplash() {
+  if (splashTimeout) clearTimeout(splashTimeout);
+  const splash = document.getElementById('splashScreen');
+  splash.classList.add('hidden');
+  // Land on the lobby choice: start a new game or join one by 4-digit code.
+  openEntryScreen();
+}
+
+// --- SETUP & INITIALIZATION ---
+function openSetupModal() {
+  // In a networked game "restart" means leaving the room, not re-rolling locally.
+  if (Net.mode !== 'local') {
+    const host = Net.mode === 'host';
+    if (!confirm(host
+      ? 'This closes the room for every boss and returns to the lobby screen. Continue?'
+      : 'This leaves the game and returns to the start screen. Continue?')) return;
+    leaveMultiplayer();
+    openEntryScreen();
+    return;
+  }
+  document.getElementById('setupModal').classList.add('active');
+  selectPlayerCount(chosenPlayerCount);
+}
+
+function selectPlayerCount(count) {
+  chosenPlayerCount = count;
+  for (let i = 1; i <= 4; i++) {
+    const btn = document.getElementById(`pcount-${i}`);
+    if (i === count) btn.classList.add('selected');
+    else btn.classList.remove('selected');
+  }
+
+  let listHtml = `<strong>Active Bosses in Game:</strong><br>`;
+  for (let i = 0; i < count; i++) {
+    const boss = ALL_BOSSES[i];
+    listHtml += `<span style="color:${boss.color}; font-weight:bold;">● Boss ${boss.name}</span><br>`;
+  }
+  document.getElementById('selectedBossesList').innerHTML = listHtml;
+}
+
+function confirmStartGame() {
+  triggerFullscreen();
+  const ids = [];
+  for (let i = 0; i < chosenPlayerCount; i++) ids.push(ALL_BOSSES[i].id);
+  closeModal('setupModal');
+  beginWar(ids, { broadcast: false });
+}
+
+/**
+ * Starts a war with the given boss ids, in order.
+ * Seat order === array order === mobster assignment.
+ * opts.broadcast: this device is the host and must push the start to its guests.
+ */
+function beginWar(bossIds, opts) {
+  opts = opts || {};
+  const ids = (bossIds && bossIds.length)
+    ? bossIds.slice()
+    : ALL_BOSSES.slice(0, chosenPlayerCount).map(b => b.id);
+
+  ['setupModal', 'lobbyModal', 'entryModal', 'createModal', 'joinModal'].forEach(closeModal);
+
+  players = ids.map((bossId, seat) => {
+    const boss = ALL_BOSSES.find(b => b.id === bossId) || ALL_BOSSES[seat];
+    return {
+      id: boss.id,
+      name: boss.name,
+      color: boss.color,
+      seat: seat,
+      cash: 1500,
+      position: 0,
+      inJail: false,
+      jailTurns: 0,
+      jailCards: 0,
+      bankrupt: false
+    };
+  });
+  chosenPlayerCount = players.length;
+
+  boardState = {};
+  TILE_DATA.forEach(tile => {
+    if (['activity', 'limo', 'arms'].includes(tile.type)) {
+      boardState[tile.id] = { owner: null, enforcers: 0, mortgaged: false };
+    }
+  });
+
+  activePlayerIndex = 0;
+  doubleCount = 0;
+  hasRolled = false;
+  isMoving = false;
+  currentDice = [1, 1];
+  Net.boardRendered = true;
+  Net.gameStarted = true;
+  Net.lastState = null;      // don't diff the new game against the old one
+
+  document.getElementById('gameLog').innerHTML = '';
+
+  renderBoard();
+  renderPlayers();
+  renderPortfolio();
+  updateDiceFaces([1, 1]);
+
+  document.getElementById('btnRoll').disabled = false;
+  document.getElementById('btnEndTurn').disabled = true;
+
+  logEvent(`Syndicate war initialized with ${players.length} Mob Boss(es). All tributes are DOUBLED!`, "system");
+  if (Net.mode !== 'local') {
+    logEvent(`Sign-on order: ${players.map((p, i) => `${i + 1}. ${p.name}`).join(' · ')}`, "system");
+  }
+
+  updateNavIdentity();
+
+  if (opts.broadcast && Net.mode === 'host') {
+    sendToAll({ type: 'start', roster: players.map(p => p.id), code: Net.code });
+    broadcastState();
+    publishModal();
+  }
+  syncTurnButtons();
+}
+
+// --- SAVE & RESUME MECHANISM ---
+function saveGame() {
+  const state = {
+    players,
+    boardState,
+    activePlayerIndex,
+    doubleCount,
+    hasRolled,
+    chosenPlayerCount,
+    log: document.getElementById('gameLog').innerHTML
+  };
+  try {
+    localStorage.setItem('chicagopoly_save', JSON.stringify(state));
+    logEvent("💾 Syndicate war state saved successfully.", "system");
+    alert("Game saved successfully! You can resume it anytime.");
+  } catch (e) {
+    alert("Unable to save game. Local storage unavailable.");
+  }
+}
+
+function loadGame() {
+  if (Net.mode === 'client') {
+    alert("Only the host can resume a saved war. Your board is already synced to the host.");
+    return;
+  }
+  try {
+    const raw = localStorage.getItem('chicagopoly_save');
+    if (!raw) {
+      alert("No saved syndicate war found.");
+      return;
+    }
+    const state = JSON.parse(raw);
+    players = state.players;
+    boardState = state.boardState;
+    activePlayerIndex = state.activePlayerIndex;
+    doubleCount = state.doubleCount;
+    hasRolled = state.hasRolled;
+    chosenPlayerCount = state.chosenPlayerCount || players.length;
+    
+    document.getElementById('gameLog').innerHTML = state.log || '';
+
+    renderBoard();
+    renderPlayers();
+    renderPortfolio();
+
+    document.getElementById('btnRoll').disabled = hasRolled;
+    document.getElementById('btnEndTurn').disabled = !hasRolled;
+
+    closeModal('setupModal');
+    logEvent("📂 Saved syndicate war state resumed.", "system");
+    Net.boardRendered = true;
+    Net.gameStarted = true;
+    updateNavIdentity();
+    if (Net.mode === 'host') { broadcastState(); publishModal(); }
+    syncTurnButtons();
+  } catch (e) {
+    alert("Failed to load saved state.");
+  }
+}
+
+// --- RENDER FUNCTIONS ---
+function renderBoard() {
+  const boardEl = document.getElementById('board');
+  const existingTiles = boardEl.querySelectorAll('.tile');
+  existingTiles.forEach(t => t.remove());
+
+  TILE_DATA.forEach((tile, index) => {
+    const tileDiv = document.createElement('div');
+    tileDiv.className = `tile c-${tile.color}`;
+    tileDiv.id = `tile-${index}`;
+    tileDiv.onclick = () => showRacketDetails(index);
+
+    let gridRow, gridCol, edgeClass = "";
+
+    if (index >= 0 && index <= 10) {
+      gridRow = 11;
+      gridCol = 11 - index;
+      edgeClass = "bottom";
+    } else if (index > 10 && index <= 20) {
+      gridRow = 11 - (index - 10);
+      gridCol = 1;
+      edgeClass = "left";
+    } else if (index > 20 && index <= 30) {
+      gridRow = 1;
+      gridCol = 1 + (index - 20);
+      edgeClass = "top";
+    } else {
+      gridRow = 1 + (index - 30);
+      gridCol = 11;
+      edgeClass = "right";
+    }
+
+    tileDiv.style.gridRow = gridRow;
+    tileDiv.style.gridColumn = gridCol;
+    tileDiv.classList.add(edgeClass);
+
+    if (['go', 'jail', 'parking', 'gotojail'].includes(tile.type)) {
+      tileDiv.classList.add('corner-tile');
+      let icon = "";
+      if (tile.type === 'go') icon = "💰<br>THE BIG<br>PAYOFF<br><small>$200</small>";
+      if (tile.type === 'jail') icon = "🚔<br>COUNTY<br>JAIL<br><small>VISITING</small>";
+      if (tile.type === 'parking') icon = "🍸<br>SAFE<br>HAVEN<br><small>REST</small>";
+      if (tile.type === 'gotojail') icon = "🚨<br>FEDERAL<br>RAID!<br><small>JAIL</small>";
+      tileDiv.innerHTML = icon;
+    } else {
+      let colorBar = (tile.type === 'activity') ? `<div class="tile-color-bar c-${tile.group}"></div>` : '';
+      let priceText = tile.price ? `$${tile.price}` : '';
+      let enforcersHtml = `<div class="tile-enforcers" id="enf-${index}"></div>`;
+      let ownerBadgeHtml = `<div class="tile-owner-badge" id="owner-badge-${index}" style="display:none;"></div>`;
+      
+      tileDiv.innerHTML = `
+        ${colorBar}
+        ${enforcersHtml}
+        ${ownerBadgeHtml}
+        <div class="tile-content-box">
+          <div class="tile-name">${tile.name}</div>
+          <div class="tile-tribute">${priceText}</div>
+        </div>
+      `;
+    }
+
+    const tokenBox = document.createElement('div');
+    tokenBox.className = 'tile-tokens';
+    tokenBox.id = `tokens-${index}`;
+    tileDiv.appendChild(tokenBox);
+
+    boardEl.appendChild(tileDiv);
+  });
+
+  updateTokens();
+  updateTileEnforcers();
+  updateOwnershipBadges();
+}
+
+function updateOwnershipBadges() {
+  Object.keys(boardState).forEach(tileId => {
+    const state = boardState[tileId];
+    const badge = document.getElementById(`owner-badge-${tileId}`);
+    if (!badge) return;
+
+    if (state.owner !== null) {
+      const owner = players.find(p => p.id === state.owner);
+      if (owner) {
+        badge.style.display = 'flex';
+        badge.style.backgroundColor = owner.color;
+        badge.innerText = owner.name[0];
+        badge.title = `Controlled by Boss ${owner.name}${state.mortgaged ? ' (Pawned)' : ''}`;
+        badge.style.outline = state.mortgaged ? "2px dashed #e74c3c" : "none";
+      }
+    } else {
+      badge.style.display = 'none';
+    }
+  });
+}
+
+function updateTokens() {
+  document.querySelectorAll('.tile-tokens').forEach(el => el.innerHTML = '');
+  players.forEach((p) => {
+    if (p.bankrupt) return;
+    const tokenBox = document.getElementById(`tokens-${p.position}`);
+    if (tokenBox) {
+      const pin = document.createElement('div');
+      pin.className = 'player-token-pin';
+      pin.id = `token-pin-${p.id}`;
+      pin.style.backgroundColor = p.color;
+      pin.innerText = p.name[0];
+      pin.title = `Boss ${p.name}`;
+      tokenBox.appendChild(pin);
+    }
+  });
+}
+
+function updateTileEnforcers() {
+  Object.keys(boardState).forEach(tileId => {
+    const state = boardState[tileId];
+    const enfBox = document.getElementById(`enf-${tileId}`);
+    if (!enfBox) return;
+
+    enfBox.innerHTML = '';
+    if (state.enforcers > 0 && state.enforcers < 5) {
+      enfBox.innerHTML = '🔫'.repeat(state.enforcers);
+      enfBox.title = `${state.enforcers} Hit Men stationed`;
+    } else if (state.enforcers === 5) {
+      enfBox.innerHTML = '🎩';
+      enfBox.title = `Controlled by a Made Man`;
+    }
+    if (state.mortgaged) {
+      enfBox.innerHTML = '⚠️ PAWN';
+    }
+  });
+}
+
+function renderPlayers() {
+  const container = document.getElementById('playersContainer');
+  container.innerHTML = '';
+
+  players.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = `player-row ${i === activePlayerIndex ? 'active' : ''} ${p.bankrupt ? 'bankrupt' : ''}`;
+    
+    let statusText = p.bankrupt ? 'Wiped Out' : (p.inJail ? `Jail (${p.jailTurns}/3)` : 'Active');
+    if (p.jailCards > 0 && !p.bankrupt) {
+      statusText += ` | 📜 ${p.jailCards}`;
+    }
+
+    row.innerHTML = `
+      <div class="player-identity">
+        <span class="player-dot" style="background:${p.color}"></span>
+        <div style="line-height:1.12; flex:1; min-width:0;">
+          <div class="player-details-inline">
+            <span class="player-name">${p.name} ${i === activePlayerIndex ? '★' : ''}</span>
+            <span class="player-cash">$${p.cash}</span>
+          </div>
+          <small class="player-status" style="color:${p.inJail ? '#e74c3c' : '#aaa'};">${statusText}</small>
+        </div>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+
+  const activeP = players[activePlayerIndex];
+  if (activeP) {
+    document.getElementById('turnAnnouncer').innerText = `Boss ${activeP.name}'s Move`;
+    document.getElementById('turnAnnouncer').style.color = activeP.color;
+  }
+}
+
+function renderPortfolio() {
+  const activeP = players[activePlayerIndex];
+  const container = document.getElementById('portfolioDisplay');
+  if (!activeP) return;
+  
+  const owned = Object.keys(boardState)
+    .filter(tId => boardState[tId].owner === activeP.id)
+    .map(tId => ({ ...TILE_DATA[tId], ...boardState[tId], tileId: parseInt(tId) }));
+
+  if (owned.length === 0) {
+    container.innerHTML = `<div style="color:var(--text-muted); padding:10px;">Boss ${activeP.name} holds no active rackets.</div>`;
+    return;
+  }
+
+  let html = `<div class="activity-chip-grid">`;
+  owned.forEach(item => {
+    let dev = item.enforcers === 5 ? "🎩 Made Man" : (item.enforcers > 0 ? `🔫 ${item.enforcers} Hit Men` : "Base Racket");
+    if (item.mortgaged) dev = "⚠️ Mortgaged";
+    
+    html += `
+      <div class="activity-chip" style="border-left-color: var(--gold);" onclick="showRacketDetails(${item.tileId})">
+        <div class="activity-chip-name">${cleanName(item.name)}</div>
+        <div class="activity-chip-status">
+          <span>${dev}</span>
+          <span>$${item.price}</span>
+        </div>
+      </div>
+    `;
+  });
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function logEvent(msg, type = "") {
+  const log = document.getElementById('gameLog');
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${type}`;
+  entry.innerHTML = `<span>[${new Date().toLocaleTimeString().split(' ')[0]}]</span> ${msg}`;
+  log.prepend(entry);
+}
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// --- JAIL DECISION PROMPT ---
+function handleRollDice() {
+  // In a networked game only the boss whose move it is may throw the dice.
+  // Relayed guest actions have already been checked against the active seat,
+  // so the guard is skipped for those.
+  if (Net.mode !== 'local' && !Net.relaying && !isMyTurn()) return;
+
+  const p = players[activePlayerIndex];
+  if (hasRolled || isMoving) return;
+
+  if (p.inJail) {
+    showJailOptionsModal(p);
+    return;
+  }
+
+  // Returned so the multiplayer wrapper can wait for the move to finish
+  // before pushing a snapshot to the other bosses.
+  return executeDiceRollAndMove();
+}
+
+function showJailOptionsModal(player) {
+  const modal = document.getElementById('actionModal');
+  document.getElementById('actionTitle').innerText = "Cook County Jail - Legal Maneuvers";
+  
+  let pardonBtn = '';
+  if (player.jailCards > 0) {
+    pardonBtn = `<button class="btn" style="background:#1e8449; color:#fff;" onclick="useJailPardon(${player.id})">Use Jail Release Pardon Card (${player.jailCards} available)</button>`;
+  }
+
+  document.getElementById('actionBody').innerHTML = `
+    <div style="text-align:center; padding:10px;">
+      <p style="font-size:1.05rem; margin-bottom:12px;">Boss <strong>${player.name}</strong> is locked in Cook County Jail (Attempt ${player.jailTurns + 1} of 3).</p>
+      <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:16px;">How would you like to handle your release?</p>
+      <div style="display:flex; flex-direction:column; gap:10px; max-width:400px; margin:0 auto;">
+        ${pardonBtn}
+        <button class="btn" onclick="payJailBail(${player.id})" ${player.cash < 50 ? 'disabled' : ''}>Pay $50 Lawyer Bail & Roll</button>
+        <button class="btn btn-crimson" onclick="rollForDoublesInJail(${player.id})">Attempt Rolling Doubles</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('actionButtons').innerHTML = '';
+  modal.classList.add('active');
+}
+
+function useJailPardon(playerId) {
+  closeModal('actionModal');
+  const p = players.find(pl => pl.id === playerId);
+  p.jailCards--;
+  p.inJail = false;
+  p.jailTurns = 0;
+  logEvent(`Boss ${p.name} used a Jail Release Pardon card and walked free!`, "cash");
+  renderPlayers();
+  return executeDiceRollAndMove();
+}
+
+function payJailBail(playerId) {
+  closeModal('actionModal');
+  const p = players.find(pl => pl.id === playerId);
+  adjustCash(p, -50);
+  SoundFX.playCash();
+  p.inJail = false;
+  p.jailTurns = 0;
+  logEvent(`Boss ${p.name} paid $50 lawyer bail and was released from Cook County Jail.`, "cash");
+  renderPlayers();
+  return executeDiceRollAndMove();
+}
+
+async function rollForDoublesInJail(playerId) {
+  closeModal('actionModal');
+  const p = players.find(pl => pl.id === playerId);
+  
+  isMoving = true;
+  document.getElementById('btnRoll').disabled = true;
+  SoundFX.playDiceRoll();
+
+  const d1 = Math.floor(Math.random() * 6) + 1;
+  const d2 = Math.floor(Math.random() * 6) + 1;
+  currentDice = [d1, d2];
+  
+  await animateDice(d1, d2);
+  logEvent(`${p.name} rolled a ${d1} & ${d2} in jail.`, "system");
+
+  if (d1 === d2) {
+    logEvent(`${p.name} rolled doubles and broke out of Cook County Jail!`, "cash");
+    p.inJail = false;
+    p.jailTurns = 0;
+    await hopMovePlayer(p, d1 + d2);
+    hasRolled = true;
+    document.getElementById('btnEndTurn').disabled = false;
+  } else {
+    p.jailTurns++;
+    logEvent(`${p.name} failed to roll doubles (Turn ${p.jailTurns} in jail).`);
+    if (p.jailTurns >= 3) {
+      logEvent(`${p.name} reached 3 failed attempts. Forced $50 lawyer bond paid!`, "cash");
+      SoundFX.playCash();
+      adjustCash(p, -50);
+      p.inJail = false;
+      p.jailTurns = 0;
+      await hopMovePlayer(p, d1 + d2);
+    }
+    hasRolled = true;
+    document.getElementById('btnEndTurn').disabled = false;
+  }
+  isMoving = false;
+  renderPlayers();
+}
+
+// --- STANDARD ASYNC DICE ROLL & HOPPING ---
+async function executeDiceRollAndMove() {
+  isMoving = true;
+  document.getElementById('btnRoll').disabled = true;
+
+  SoundFX.playDiceRoll();
+
+  const d1 = Math.floor(Math.random() * 6) + 1;
+  const d2 = Math.floor(Math.random() * 6) + 1;
+  currentDice = [d1, d2];
+
+  await animateDice(d1, d2);
+
+  const p = players[activePlayerIndex];
+  const isDouble = (d1 === d2);
+
+  logEvent(`${p.name} rolled a ${d1} & ${d2} (${d1 + d2}).`, "system");
+
+  if (isDouble) {
+    doubleCount++;
+    if (doubleCount === 3) {
+      logEvent(`${p.name} rolled 3 consecutive doubles! The hideout was raided. Go directly to Jail!`, "crime");
+      sendToJail(p);
+      hasRolled = true;
+      isMoving = false;
+      document.getElementById('btnEndTurn').disabled = false;
+      return;
+    }
+    hasRolled = false;
+  } else {
+    hasRolled = true;
+  }
+
+  await hopMovePlayer(p, d1 + d2);
+  isMoving = false;
+
+  if (hasRolled) {
+    document.getElementById('btnEndTurn').disabled = false;
+  } else {
+    document.getElementById('btnRoll').disabled = false;
+    logEvent(`${p.name} rolled doubles and takes another move!`, "system");
+  }
+}
+
+async function animateDice(d1, d2) {
+  const dieIcons = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+  const die1El = document.getElementById('die1');
+  const die2El = document.getElementById('die2');
+  
+  die1El.classList.add('rolling');
+  die2El.classList.add('rolling');
+
+  for(let i = 0; i < 8; i++) {
+    die1El.innerText = dieIcons[Math.floor(Math.random() * 6) + 1];
+    die2El.innerText = dieIcons[Math.floor(Math.random() * 6) + 1];
+    await sleep(65);
+  }
+
+  die1El.classList.remove('rolling');
+  die2El.classList.remove('rolling');
+
+  die1El.innerText = dieIcons[d1];
+  die2El.innerText = dieIcons[d2];
+}
+
+// HOPPING TRAVERSAL ANIMATION
+async function hopMovePlayer(p, totalSteps) {
+  for (let s = 1; s <= totalSteps; s++) {
+    p.position = (p.position + 1) % 40;
+    SoundFX.playHop();
+
+    if (p.position === 0 && !p.inJail) {
+      logEvent(`${p.name} completed a circuit around Chicago and collected $200 from The Big Payoff!`, "cash");
+      SoundFX.playCash();
+      adjustCash(p, 200);
+      renderPlayers();
+    }
+
+    updateTokens();
+    
+    const pin = document.getElementById(`token-pin-${p.id}`);
+    if (pin) {
+      pin.classList.add('hopping');
+      await sleep(140);
+      pin.classList.remove('hopping');
+    }
+    await sleep(80);
+  }
+
+  const destTile = document.getElementById(`tile-${p.position}`);
+  if (destTile) destTile.classList.add('destination-highlight');
+  
+  await sleep(700);
+
+  if (destTile) destTile.classList.remove('destination-highlight');
+
+  handleTileLanding(p, p.position);
+}
+
+function handleTileLanding(p, tileIndex) {
+  const tile = TILE_DATA[tileIndex];
+  logEvent(`${p.name} arrived at <strong>${cleanName(tile.name)}</strong>.`);
+
+  if (tile.type === 'activity' || tile.type === 'limo' || tile.type === 'arms') {
+    const prop = boardState[tileIndex];
+    if (prop.owner === null) {
+      showSeizePrompt(p, tile);
+    } else if (prop.owner !== p.id && !prop.mortgaged) {
+      promptTributeDemand(p, tile, prop);
+    }
+  } else if (tile.type === 'tax') {
+    logEvent(`${p.name} paid $${tile.price} for City Hall payoffs & tax investigations.`, "crime");
+    SoundFX.playCash();
+    adjustCash(p, -tile.price);
+  } else if (tile.type === 'gotojail') {
+    sendToJail(p);
+  } else if (tile.type === 'risk') {
+    drawCard('risk', p);
+  } else if (tile.type === 'petty') {
+    drawCard('petty', p);
+  }
+}
+
+// --- DOUBLED TRIBUTE DEMAND ---
+function promptTributeDemand(trespasser, tile, prop) {
+  const owner = players.find(pl => pl.id === prop.owner);
+  if (!owner) return;
+
+  let tribute = 0;
+  let breakdownText = "";
+
+  if (tile.type === 'activity') {
+    tribute = tile.rent[prop.enforcers];
+    if (prop.enforcers === 0 && ownsFullGroup(owner.id, tile.group)) {
+      tribute *= 2;
+      breakdownText = "Full syndicate control of racket discipline (2x doubled base tribute)";
+    } else if (prop.enforcers === 5) {
+      breakdownText = "Extortion commanded by an inducted MADE MAN (Maximum doubled tribute)";
+    } else if (prop.enforcers > 0) {
+      breakdownText = `Fortified with ${prop.enforcers} stationed Hit Men (Doubled tribute)`;
+    } else {
+      breakdownText = "Standard street tribute rate (Doubled)";
+    }
+  } else if (tile.type === 'limo') {
+    const limoCount = countOwnedInGroup(owner.id, 'limo');
+    tribute = tile.rent[limoCount - 1] || 50;
+    breakdownText = `Boss ${owner.name} operates ${limoCount} armored Limousine(s) (Doubled)`;
+  } else if (tile.type === 'arms') {
+    const armsCount = countOwnedInGroup(owner.id, 'arms');
+    const rollSum = currentDice[0] + currentDice[1];
+    tribute = (armsCount === 2) ? rollSum * 20 : rollSum * 8;
+    breakdownText = `Munitions ring rate: ${armsCount === 2 ? '20x' : '8x'} the dice roll (${rollSum})`;
+  }
+
+  SoundFX.playShakedown();
+
+  const modal = document.getElementById('actionModal');
+  document.getElementById('actionTitle').innerText = "Rival Turf Trespass: Doubled Tribute Demanded!";
+
+  document.getElementById('actionBody').innerHTML = `
+    <div style="text-align:center; padding:10px;">
+      <div style="display:flex; justify-content:center; align-items:center; gap:16px; margin-bottom:12px;">
+        <div>
+          <span class="player-dot" style="background:${trespasser.color}"></span>
+          <div style="font-weight:bold; font-size:0.85rem; margin-top:3px;">${trespasser.name}</div>
+        </div>
+        <span style="font-size:1.4rem; color:var(--crimson-light);">➜ pays tribute to ➜</span>
+        <div>
+          <span class="player-dot" style="background:${owner.color}"></span>
+          <div style="font-weight:bold; font-size:0.85rem; margin-top:3px;">${owner.name}</div>
+        </div>
+      </div>
+
+      <h3 style="color:var(--gold); font-size:1.15rem; margin-bottom:4px;">${cleanName(tile.name)}</h3>
+      <p style="font-size:0.8rem; color:var(--text-muted);">${breakdownText}</p>
+      
+      <div style="margin:14px 0; background:#232730; padding:12px; border-radius:6px; border:1px solid #444;">
+        <span style="font-size:0.85rem; color:var(--text-light);">Required Protection Tribute:</span>
+        <div style="font-size:1.8rem; font-weight:900; color:var(--gold-bright);">$${tribute}</div>
+      </div>
+      <p style="font-size:0.8rem; color:#aaa;">Boss ${owner.name} exercises complete authority over this operation.</p>
+    </div>
+  `;
+
+  document.getElementById('actionButtons').innerHTML = `
+    <button class="btn btn-crimson" onclick="executeTributePayment(${trespasser.id}, ${owner.id}, ${tribute}, '${cleanName(tile.name)}')">Pay Doubled Tribute ($${tribute})</button>
+  `;
+
+  modal.classList.add('active');
+}
+
+function executeTributePayment(trespasserId, ownerId, tribute, tileName) {
+  closeModal('actionModal');
+  const trespasser = players.find(p => p.id === trespasserId);
+  const owner = players.find(p => p.id === ownerId);
+
+  SoundFX.playCash();
+  adjustCash(trespasser, -tribute);
+  adjustCash(owner, tribute);
+
+  logEvent(`Boss ${trespasser.name} paid $${tribute} protection tribute to Boss ${owner.name} for trespassing on <strong>${cleanName(tileName)}</strong>.`, "crime");
+}
+
+function showSeizePrompt(player, tile) {
+  const modal = document.getElementById('actionModal');
+  document.getElementById('actionTitle').innerText = "Claim Illicit Operation";
+  
+  let body = `
+    <div style="text-align:center; margin-bottom:12px;">
+      <h3>${cleanName(tile.name)}</h3>
+      <p style="color:var(--gold-bright); font-size:1.15rem; margin-top:4px;">Acquisition Cost: $${tile.price}</p>
+      <p style="color:var(--text-muted); margin-top:6px; font-size:0.85rem;">Do you want to seize this operation for your crew or open it up for syndicate bidding?</p>
+    </div>
+  `;
+  document.getElementById('actionBody').innerHTML = body;
+
+  const btnContainer = document.getElementById('actionButtons');
+  btnContainer.innerHTML = `
+    <button class="btn" id="btnBuyConfirm" ${player.cash < tile.price ? 'disabled' : ''} onclick="claimRacket(${player.id}, ${tile.id})">Seize Territory ($${tile.price})</button>
+    <button class="btn btn-crimson" onclick="startAuction(${tile.id})">Open Syndicate Bidding</button>
+  `;
+
+  modal.classList.add('active');
+}
+
+function claimRacket(playerId, tileId) {
+  const p = players.find(pl => pl.id === playerId);
+  const tile = TILE_DATA[tileId];
+
+  SoundFX.playCash();
+  adjustCash(p, -tile.price);
+  boardState[tileId].owner = p.id;
+  
+  logEvent(`${p.name} seized control of <strong>${cleanName(tile.name)}</strong> for $${tile.price}!`, "cash");
+  closeModal('actionModal');
+  renderPortfolio();
+  updateOwnershipBadges();
+}
+
+// --- UNDERWORLD BIDDING / AUCTION ---
+let auctionState = { tileId: null, currentBid: 0, highBidder: null, activeBidders: [] };
+
+function startAuction(tileId) {
+  closeModal('actionModal');
+  const tile = TILE_DATA[tileId];
+  auctionState.tileId = tileId;
+  auctionState.currentBid = 10;
+  auctionState.highBidder = null;
+  auctionState.activeBidders = players.filter(p => !p.bankrupt).map(p => p.id);
+
+  logEvent(`Syndicate bidding opened for <strong>${cleanName(tile.name)}</strong>!`, "system");
+  renderAuctionModal();
+}
+
+function renderAuctionModal() {
+  const modal = document.getElementById('actionModal');
+  const tile = TILE_DATA[auctionState.tileId];
+  document.getElementById('actionTitle').innerText = `Underworld Bidding: ${cleanName(tile.name)}`;
+
+  let highBidderObj = players.find(p => p.id === auctionState.highBidder);
+  let highBidderName = highBidderObj ? highBidderObj.name : "None (Opening: $10)";
+
+  let biddersHtml = `<div style="display:flex; flex-direction:column; gap:10px; margin-top:14px;">`;
+  auctionState.activeBidders.forEach(bId => {
+    const bidder = players.find(p => p.id === bId);
+    const isTop = (auctionState.highBidder === bId);
+    biddersHtml += `
+      <div class="bid-row" data-bidder="${bidder.id}" style="display:flex; justify-content:space-between; align-items:center; gap:10px; background:#232730; padding:10px 14px; border-radius:6px; border-left:4px solid ${bidder.color};">
+        <span style="font-size:0.95rem;">
+          <strong>${bidder.name}</strong> ($${bidder.cash})
+          <span class="bid-you">your bid</span>${isTop ? '<span class="bid-top">top bid</span>' : ''}
+        </span>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="bid-lock"></span>
+          <div class="bid-controls" style="display:flex; gap:8px;">
+            <button class="btn" style="padding:8px 16px; font-size:0.9rem; min-width:68px;" ${bidder.cash < auctionState.currentBid + 10 ? 'disabled' : ''} onclick="placeBid(${bidder.id}, 10)">+$10</button>
+            <button class="btn" style="padding:8px 16px; font-size:0.9rem; min-width:68px;" ${bidder.cash < auctionState.currentBid + 50 ? 'disabled' : ''} onclick="placeBid(${bidder.id}, 50)">+$50</button>
+            <button class="btn btn-crimson" style="padding:8px 16px; font-size:0.9rem; min-width:68px;" onclick="passBid(${bidder.id})">Fold</button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  biddersHtml += `</div>`;
+
+  document.getElementById('actionBody').innerHTML = `
+    <div style="text-align:center;">
+      <h3 style="color:var(--gold); font-size:1.2rem;">${cleanName(tile.name)}</h3>
+      <p style="font-size:1.15rem; color:var(--gold-bright); margin:8px 0;">Top Bid: $${auctionState.currentBid} by ${highBidderName}</p>
+    </div>
+    ${biddersHtml}
+    <p class="bid-note" style="text-align:center; color:var(--text-muted); font-size:0.78rem; margin-top:10px;"></p>
+  `;
+
+  // Only this device's own boss keeps live bid / fold controls.
+  gateAuctionControls(document.getElementById('actionBody'));
+
+  document.getElementById('actionButtons').innerHTML = '';
+  modal.classList.add('active');
+}
+
+/* --------------------------------------------------------------------------
+   PRIVATE BIDDING (v3.8)
+   Every bidder row is rendered with its own bid / fold controls, because this
+   exact markup is what the host mirrors to each guest. Each viewer then
+   unlocks only its own row: a boss can never bid or fold with a rival's cash,
+   and every rival bids or folds from their own screen. Pass & play on one
+   shared device deliberately leaves every seat live.
+   -------------------------------------------------------------------------- */
+function auctionIsNetworked() {
+  return Net.mode === 'host' || Net.mode === 'client';
+}
+
+function gateAuctionControls(root) {
+  if (!root) return;
+  const rows = root.querySelectorAll('.bid-row');
+  if (!rows.length) return;
+  const networked = auctionIsNetworked();
+
+  rows.forEach(row => {
+    const ownerId = parseInt(row.getAttribute('data-bidder'), 10);
+    const mine = !networked || (ownerId === Net.myPlayerId);
+    row.classList.toggle('bid-mine', mine);
+    row.classList.toggle('bid-locked', !mine);
+    const lock = row.querySelector('.bid-lock');
+    if (lock) lock.textContent = mine ? '' : 'bids or folds on their own screen';
+  });
+
+  const note = root.querySelector('.bid-note');
+  if (note) {
+    note.textContent = networked
+      ? 'Each boss bids or folds from their own screen — your mob, your money.'
+      : '';
+  }
+}
+
+/* The host refuses any bid or fold aimed at somebody else's mob (relayed
+   guest calls have already been checked against their own seat). */
+function mayBidAs(bidderId) {
+  if (!auctionIsNetworked()) return true;   // pass & play: any seat, one device
+  if (Net.relaying) return true;            // host running a guest's vetted call
+  return parseInt(bidderId, 10) === Net.myPlayerId;
+}
+
+function refuseForeignBid(bidderId) {
+  const other = players.find(p => p.id === bidderId);
+  toast('Only Boss ' + (other ? other.name : '?') + ' can bid with their own cash — each boss bids from their own screen.');
+}
+
+function placeBid(playerId, increment) {
+  if (!mayBidAs(playerId)) { refuseForeignBid(playerId); return; }
+  auctionState.currentBid += increment;
+  auctionState.highBidder = playerId;
+  SoundFX.playHop();
+  logEvent(`${players.find(p => p.id === playerId).name} raised the bid to $${auctionState.currentBid}.`);
+  renderAuctionModal();
+}
+
+function passBid(playerId) {
+  if (!mayBidAs(playerId)) { refuseForeignBid(playerId); return; }
+  auctionState.activeBidders = auctionState.activeBidders.filter(id => id !== playerId);
+  logEvent(`${players.find(p => p.id === playerId).name} folded from bidding.`);
+
+  if (auctionState.activeBidders.length === 1 && auctionState.highBidder !== null) {
+    finalizeAuction();
+  } else if (auctionState.activeBidders.length === 0) {
+    if (auctionState.highBidder !== null) {
+      finalizeAuction();
+    } else {
+      logEvent(`No bids were placed on ${cleanName(TILE_DATA[auctionState.tileId].name)}. Operation remains unclaimed.`);
+      closeModal('actionModal');
+    }
+  } else {
+    renderAuctionModal();
+  }
+}
+
+function finalizeAuction() {
+  const winner = players.find(p => p.id === auctionState.highBidder);
+  const tile = TILE_DATA[auctionState.tileId];
+  
+  SoundFX.playCash();
+  adjustCash(winner, -auctionState.currentBid);
+  boardState[tile.id].owner = winner.id;
+  
+  logEvent(`Boss ${winner.name} won control of <strong>${cleanName(tile.name)}</strong> for $${auctionState.currentBid}!`, "cash");
+  closeModal('actionModal');
+  renderPortfolio();
+  updateOwnershipBadges();
+}
+
+// --- CARD DRAWS ---
+function drawCard(type, player) {
+  const deck = (type === 'risk') ? RISK_CARDS : PETTY_CASH_CARDS;
+  const card = deck[Math.floor(Math.random() * deck.length)];
+  
+  const modal = document.getElementById('actionModal');
+  document.getElementById('actionTitle').innerText = (type === 'risk') ? "RISK CARD DRAWN" : "PETTY CASH ENVELOPE";
+  
+  document.getElementById('actionBody').innerHTML = `
+    <div style="text-align:center; padding:12px;">
+      <p style="font-size:1.05rem; line-height:1.4; color:#fff;">"${card.text}"</p>
+    </div>
+  `;
+
+  document.getElementById('actionButtons').innerHTML = `
+    <button class="btn" onclick="executeCardAction(${player.id}, '${type}', ${deck.indexOf(card)})">Accept</button>
+  `;
+
+  modal.classList.add('active');
+}
+
+async function executeCardAction(playerId, deckType, cardIndex) {
+  closeModal('actionModal');
+  const player = players.find(p => p.id === playerId);
+  const card = (deckType === 'risk') ? RISK_CARDS[cardIndex] : PETTY_CASH_CARDS[cardIndex];
+
+  if (card.action === 'cash') {
+    SoundFX.playCash();
+    adjustCash(player, card.amount);
+    logEvent(`${player.name} ${card.amount > 0 ? 'collected' : 'paid'} $${Math.abs(card.amount)} from syndicate wire.`, card.amount > 0 ? "cash" : "crime");
+  } else if (card.action === 'move') {
+    if (card.target === 0) {
+      player.position = 0;
+      adjustCash(player, 200);
+      SoundFX.playCash();
+      logEvent(`${player.name} advanced to The Big Payoff and collected $200.`);
+      updateTokens();
+    } else {
+      let diff = (card.target >= player.position) ? (card.target - player.position) : (40 - player.position + card.target);
+      await hopMovePlayer(player, diff);
+    }
+  } else if (card.action === 'jail') {
+    sendToJail(player);
+  } else if (card.action === 'jailcard') {
+    player.jailCards++;
+    renderPlayers();
+    logEvent(`📜 ${player.name} obtained a Cook County Jail Release Pardon card!`, "cash");
+  } else if (card.action === 'payplayers') {
+    players.forEach(other => {
+      if (other.id !== player.id && !other.bankrupt) {
+        adjustCash(player, -card.amount);
+        adjustCash(other, card.amount);
+      }
+    });
+    SoundFX.playCash();
+  } else if (card.action === 'collectplayers') {
+    players.forEach(other => {
+      if (other.id !== player.id && !other.bankrupt) {
+        adjustCash(other, -card.amount);
+        adjustCash(player, card.amount);
+      }
+    });
+    SoundFX.playCash();
+  } else if (card.action === 'repairs') {
+    let cost = 0;
+    Object.keys(boardState).forEach(tId => {
+      if (boardState[tId].owner === player.id) {
+        if (boardState[tId].enforcers === 5) cost += card.hotel;
+        else cost += boardState[tId].enforcers * card.house;
+      }
+    });
+    logEvent(`${player.name} paid $${cost} in crew maintenance costs.`, "crime");
+    adjustCash(player, -cost);
+  }
+}
+
+function sendToJail(player) {
+  player.position = 10;
+  player.inJail = true;
+  player.jailTurns = 0;
+  SoundFX.playArrest();
+  logEvent(`${player.name} was locked up in Cook County Jail!`, "crime");
+  updateTokens();
+  renderPlayers();
+}
+
+// --- RACKET UPGRADES & ENFORCERS ---
+function ownsFullGroup(playerId, group) {
+  const members = GROUP_MEMBERS[group];
+  if (!members) return false;
+  return members.every(tId => boardState[tId].owner === playerId && !boardState[tId].mortgaged);
+}
+
+function countOwnedInGroup(playerId, group) {
+  const members = GROUP_MEMBERS[group];
+  if (!members) return 0;
+  return members.filter(tId => boardState[tId].owner === playerId).length;
+}
+
+function openManageModal() {
+  const p = players[activePlayerIndex];
+  const modal = document.getElementById('actionModal');
+  document.getElementById('actionTitle').innerText = `Syndicate Headquarters - ${p.name}`;
+
+  const owned = Object.keys(boardState)
+    .filter(tId => boardState[tId].owner === p.id)
+    .map(tId => ({ ...TILE_DATA[tId], ...boardState[tId], tileId: parseInt(tId) }));
+
+  if (owned.length === 0) {
+    document.getElementById('actionBody').innerHTML = `<p style="text-align:center; padding:12px;">You currently control no territory or rackets to upgrade.</p>`;
+    document.getElementById('actionButtons').innerHTML = `<button class="btn" onclick="closeModal('actionModal')">Close</button>`;
+    modal.classList.add('active');
+    return;
+  }
+
+  let html = `<div style="display:flex; flex-direction:column; gap:8px; max-height:55vh; overflow-y:auto;">`;
+  owned.forEach(item => {
+    const isActivity = item.type === 'activity';
+    const canBuild = isActivity && ownsFullGroup(p.id, item.group) && item.enforcers < 5 && !item.mortgaged;
+    const canSell = isActivity && item.enforcers > 0;
+    
+    html += `
+      <div style="background:#232730; padding:8px; border-radius:6px; border-left:4px solid var(--gold);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong>${cleanName(item.name)}</strong>
+            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">
+              Crew: ${item.enforcers === 5 ? '🎩 Made Man' : (item.enforcers > 0 ? `🔫 ${item.enforcers} Hit Men` : 'No Enforcers')} | ${item.mortgaged ? '⚠️ Pawned' : 'Operational'}
+            </div>
+          </div>
+          <div>
+            ${canBuild ? `<button class="btn" style="font-size:0.68rem; padding:3px 6px;" onclick="upgradeRacket(${item.tileId})">+1 Hit Man ($${item.houseCost})</button>` : ''}
+            ${canSell ? `<button class="btn btn-crimson" style="font-size:0.68rem; padding:3px 6px;" onclick="downgradeRacket(${item.tileId})">Dismiss</button>` : ''}
+            ${!item.mortgaged && item.enforcers === 0 ? `<button class="btn" style="font-size:0.68rem; padding:3px 6px;" onclick="toggleMortgage(${item.tileId})">Pawn (+$${item.price/2})</button>` : ''}
+            ${item.mortgaged ? `<button class="btn" style="font-size:0.68rem; padding:3px 6px;" onclick="toggleMortgage(${item.tileId})">Reclaim (-$${Math.round(item.price*0.55)})</button>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  html += `</div>`;
+
+  document.getElementById('actionBody').innerHTML = html;
+  document.getElementById('actionButtons').innerHTML = `<button class="btn" onclick="closeModal('actionModal')">Done</button>`;
+  modal.classList.add('active');
+}
+
+function upgradeRacket(tileId) {
+  const p = players[activePlayerIndex];
+  const tile = TILE_DATA[tileId];
+  const prop = boardState[tileId];
+
+  if (p.cash >= tile.houseCost && prop.enforcers < 5) {
+    SoundFX.playCash();
+    adjustCash(p, -tile.houseCost);
+    prop.enforcers++;
+    const label = prop.enforcers === 5 ? "promoted to a MADE MAN!" : `stationed Hit Man #${prop.enforcers}!`;
+    logEvent(`${p.name} fortified <strong>${cleanName(tile.name)}</strong>: ${label}`, "cash");
+    updateTileEnforcers();
+    openManageModal();
+    renderPortfolio();
+  }
+}
+
+function downgradeRacket(tileId) {
+  const p = players[activePlayerIndex];
+  const tile = TILE_DATA[tileId];
+  const prop = boardState[tileId];
+
+  if (prop.enforcers > 0) {
+    SoundFX.playCash();
+    adjustCash(p, tile.houseCost / 2);
+    prop.enforcers--;
+    logEvent(`${p.name} dismissed crew from <strong>${cleanName(tile.name)}</strong> for $${tile.houseCost/2}.`);
+    updateTileEnforcers();
+    openManageModal();
+    renderPortfolio();
+  }
+}
+
+function toggleMortgage(tileId) {
+  const p = players[activePlayerIndex];
+  const tile = TILE_DATA[tileId];
+  const prop = boardState[tileId];
+
+  if (!prop.mortgaged) {
+    prop.mortgaged = true;
+    SoundFX.playCash();
+    adjustCash(p, tile.price / 2);
+    logEvent(`${p.name} pawned <strong>${cleanName(tile.name)}</strong> for emergency cash (+$${tile.price/2}).`, "cash");
+  } else {
+    const cost = Math.round(tile.price * 0.55);
+    if (p.cash >= cost) {
+      SoundFX.playCash();
+      adjustCash(p, -cost);
+      prop.mortgaged = false;
+      logEvent(`${p.name} reclaimed <strong>${cleanName(tile.name)}</strong> for $${cost}.`);
+    } else {
+      alert("Insufficient cash to reclaim this racket!");
+      return;
+    }
+  }
+  openManageModal();
+  renderPortfolio();
+  updateOwnershipBadges();
+}
+
+// --- TRADE NEGOTIATIONS ---
+function openTradeModal() {
+  const activeP = players[activePlayerIndex];
+  const otherPlayers = players.filter(p => p.id !== activeP.id && !p.bankrupt);
+  
+  if (otherPlayers.length === 0) {
+    alert("No rival bosses available for deal-making.");
+    return;
+  }
+
+  const container = document.getElementById('tradeContainer');
+  let targetId = otherPlayers[0].id;
+
+  function renderTradeInterface(partnerId) {
+    const partner = players.find(p => p.id === partnerId);
+    const myProps = Object.keys(boardState).filter(tId => boardState[tId].owner === activeP.id);
+    const partnerProps = Object.keys(boardState).filter(tId => boardState[tId].owner === partner.id);
+
+    container.innerHTML = `
+      <div style="margin-bottom:10px;">
+        <label style="font-weight:bold; font-size:0.85rem;">Negotiate With Boss: </label>
+        <select id="tradePartnerSelect" style="background:#252830; color:#fff; padding:4px 8px; border:1px solid var(--gold);" onchange="renderTradeWithSelected(this.value)">
+          ${otherPlayers.map(op => `<option value="${op.id}" ${op.id === partnerId ? 'selected' : ''}>${op.name}</option>`).join('')}
+        </select>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div style="background:#232730; padding:8px; border-radius:6px;">
+          <h4 style="color:var(--gold); border-bottom:1px solid #444; padding-bottom:3px; margin-bottom:6px; font-size:0.85rem;">${activeP.name}'s Offer</h4>
+          <label style="font-size:0.75rem;">Cash Tribute ($): </label>
+          <input type="number" id="offerCash" min="0" max="${activeP.cash}" value="0" style="width:100%; background:#16181d; border:1px solid #555; color:#fff; padding:3px; margin-bottom:6px;">
+          <div style="font-size:0.75rem; font-weight:bold; margin-bottom:3px;">Offer Rackets:</div>
+          <div style="max-height:100px; overflow-y:auto; font-size:0.75rem;">
+            ${myProps.map(tId => `
+              <div><input type="checkbox" name="myOfferProps" value="${tId}"> ${cleanName(TILE_DATA[tId].name)}</div>
+            `).join('') || '<small style="color:#777;">No operations controlled</small>'}
+          </div>
+        </div>
+
+        <div style="background:#232730; padding:8px; border-radius:6px;">
+          <h4 style="color:var(--gold); border-bottom:1px solid #444; padding-bottom:3px; margin-bottom:6px; font-size:0.85rem;">Demand from ${partner.name}</h4>
+          <label style="font-size:0.75rem;">Cash Demand ($): </label>
+          <input type="number" id="demandCash" min="0" max="${partner.cash}" value="0" style="width:100%; background:#16181d; border:1px solid #555; color:#fff; padding:3px; margin-bottom:6px;">
+          <div style="font-size:0.75rem; font-weight:bold; margin-bottom:3px;">Demand Rackets:</div>
+          <div style="max-height:100px; overflow-y:auto; font-size:0.75rem;">
+            ${partnerProps.map(tId => `
+              <div><input type="checkbox" name="partnerDemandProps" value="${tId}"> ${cleanName(TILE_DATA[tId].name)}</div>
+            `).join('') || '<small style="color:#777;">No operations controlled</small>'}
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+        <button class="btn" onclick="executeDeal(${activeP.id}, ${partner.id})">Seal Syndicate Pact</button>
+        <button class="btn btn-crimson" onclick="closeModal('tradeModal')">Cancel</button>
+      </div>
+    `;
+  }
+
+  window.renderTradeWithSelected = function(newId) {
+    renderTradeInterface(parseInt(newId));
+  };
+
+  renderTradeInterface(targetId);
+  document.getElementById('tradeModal').classList.add('active');
+}
+
+function executeDeal(p1Id, p2Id) {
+  const p1 = players.find(p => p.id === p1Id);
+  const p2 = players.find(p => p.id === p2Id);
+
+  const offerCash = parseInt(document.getElementById('offerCash').value) || 0;
+  const demandCash = parseInt(document.getElementById('demandCash').value) || 0;
+
+  const offeredPropNodes = document.querySelectorAll('input[name="myOfferProps"]:checked');
+  const demandedPropNodes = document.querySelectorAll('input[name="partnerDemandProps"]:checked');
+
+  if (offerCash > p1.cash || demandCash > p2.cash) {
+    alert("Insufficient cash to complete negotiations!");
+    return;
+  }
+
+  SoundFX.playCash();
+  adjustCash(p1, demandCash - offerCash);
+  adjustCash(p2, offerCash - demandCash);
+
+  offeredPropNodes.forEach(node => {
+    const tId = parseInt(node.value);
+    boardState[tId].owner = p2.id;
+  });
+
+  demandedPropNodes.forEach(node => {
+    const tId = parseInt(node.value);
+    boardState[tId].owner = p1.id;
+  });
+
+  logEvent(`Syndicate deal sealed between ${p1.name} and ${p2.name}!`, "system");
+  closeModal('tradeModal');
+  renderPortfolio();
+  updateOwnershipBadges();
+}
+
+// --- BANKRUPTCY & WIN CHECKS ---
+function adjustCash(player, amount) {
+  player.cash += amount;
+  renderPlayers();
+  if (player.cash < 0) {
+    handleInsolvency(player);
+  }
+}
+
+function handleInsolvency(player) {
+  logEvent(`⚠️ Boss ${player.name} is in severe syndicate debt ($${player.cash})!`, "crime");
+  const activeProps = Object.keys(boardState).filter(tId => boardState[tId].owner === player.id);
+  if (activeProps.length === 0 && player.cash < 0) {
+    declareBankruptcy(player);
+  }
+}
+
+function declareBankruptcy(player) {
+  player.bankrupt = true;
+  player.cash = 0;
+  SoundFX.playArrest();
+  logEvent(`💀 Boss ${player.name} has been eliminated from Chicago!`, "crime");
+
+  Object.keys(boardState).forEach(tId => {
+    if (boardState[tId].owner === player.id) {
+      boardState[tId].owner = null;
+      boardState[tId].enforcers = 0;
+      boardState[tId].mortgaged = false;
+    }
+  });
+
+  updateTileEnforcers();
+  updateOwnershipBadges();
+  renderPlayers();
+  checkWinCondition();
+
+  // If the boss who just went down was the one holding the move, there is
+  // nobody left to end their turn — hand it to the next survivor, or the
+  // remaining table waits on a ghost forever.
+  const survivors = players.filter(p => !p.bankrupt);
+  if (survivors.length > 1 && players[activePlayerIndex] && players[activePlayerIndex].bankrupt) {
+    do {
+      activePlayerIndex = (activePlayerIndex + 1) % players.length;
+    } while (players[activePlayerIndex].bankrupt);
+
+    hasRolled = false;
+    doubleCount = 0;
+    renderPlayers();
+    renderPortfolio();
+    logEvent(`-- Boss ${players[activePlayerIndex].name}'s move --`, "system");
+
+    if (Net.mode === 'local') {
+      document.getElementById('btnRoll').disabled = false;
+      document.getElementById('btnEndTurn').disabled = true;
+    } else if (typeof syncTurnButtons === 'function') {
+      syncTurnButtons();
+    }
+  }
+}
+
+function checkWinCondition() {
+  const activePlayers = players.filter(p => !p.bankrupt);
+  if (activePlayers.length === 1 && players.length > 1) {
+    const winner = activePlayers[0];
+    const modal = document.getElementById('actionModal');
+    document.getElementById('actionTitle').innerText = "RULER OF CHICAGO";
+    document.getElementById('actionBody').innerHTML = `
+      <div style="text-align:center; padding:18px;">
+        <h2 style="color:var(--gold); font-size:1.6rem; margin-bottom:6px;">Boss ${winner.name}</h2>
+        <p style="font-size:1.05rem;">Has wiped out every rival mob and seized undisputed control of the Chicago Outfit!</p>
+      </div>
+    `;
+    document.getElementById('actionButtons').innerHTML = `<button class="btn" onclick="openSetupModal()">Start New War</button>`;
+    modal.classList.add('active');
+  }
+}
+
+function handleEndTurn() {
+  // Same gate as the dice, and the same exemption for relayed guest actions.
+  if (Net.mode !== 'local' && !Net.relaying && !isMyTurn()) return;
+
+  hasRolled = false;
+  doubleCount = 0;
+  document.getElementById('btnRoll').disabled = false;
+  document.getElementById('btnEndTurn').disabled = true;
+
+  do {
+    activePlayerIndex = (activePlayerIndex + 1) % players.length;
+  } while (players[activePlayerIndex].bankrupt);
+
+  renderPlayers();
+  renderPortfolio();
+  logEvent(`-- Boss ${players[activePlayerIndex].name}'s move --`, "system");
+}
+
+function showRacketDetails(tileIndex) {
+  const tile = TILE_DATA[tileIndex];
+  if (!['activity', 'limo', 'arms'].includes(tile.type)) return;
+
+  const prop = boardState[tileIndex];
+  const ownerObj = players.find(p => p.id === prop.owner);
+  const ownerName = ownerObj ? ownerObj.name : "Unclaimed Territory";
+
+  const modal = document.getElementById('actionModal');
+  document.getElementById('actionTitle').innerText = "Racket Intel (Doubled Rates)";
+
+  let rentTableHtml = "";
+  if (tile.type === 'activity') {
+    rentTableHtml = `
+      <table class="racket-tribute-table">
+        <tr><td>Base Street Tribute:</td><td>$${tile.rent[0]}</td></tr>
+        <tr><td>With 1 Hit Man:</td><td>$${tile.rent[1]}</td></tr>
+        <tr><td>With 2 Hit Men:</td><td>$${tile.rent[2]}</td></tr>
+        <tr><td>With 3 Hit Men:</td><td>$${tile.rent[3]}</td></tr>
+        <tr><td>With 4 Hit Men:</td><td>$${tile.rent[4]}</td></tr>
+        <tr><td>With 1 Made Man:</td><td>$${tile.rent[5]}</td></tr>
+      </table>
+      <div style="margin-top:8px; font-size:0.72rem; color:#555;">Hit Man / Made Man Cost: $${tile.houseCost} each</div>
+    `;
+  } else if (tile.type === 'limo') {
+    rentTableHtml = `
+      <table class="racket-tribute-table">
+        <tr><td>1 Limousine Owned:</td><td>$50</td></tr>
+        <tr><td>2 Limousines Owned:</td><td>$100</td></tr>
+        <tr><td>3 Limousines Owned:</td><td>$200</td></tr>
+        <tr><td>4 Limousines Owned:</td><td>$400</td></tr>
+      </table>
+    `;
+  } else if (tile.type === 'arms') {
+    rentTableHtml = `
+      <p style="font-size:0.75rem; margin-top:6px;">1 Munitions Dealer: 8x Dice Roll.<br>Both Munitions Dealers: 20x Dice Roll.</p>
+    `;
+  }
+
+  document.getElementById('actionBody').innerHTML = `
+    <div class="racket-card-view">
+      <div class="racket-card-header c-${tile.group || tile.color}">${cleanName(tile.name)}</div>
+      <div style="text-align:center; font-weight:bold; font-size:0.85rem;">Acquisition Cost: $${tile.price}</div>
+      ${rentTableHtml}
+      <hr style="margin:8px 0; border:0; border-top:1px solid #ccc;">
+      <div style="font-size:0.8rem;"><strong>Controlling Boss:</strong> ${ownerName}</div>
+      <div style="font-size:0.8rem;"><strong>Status:</strong> ${prop.mortgaged ? 'Pawned' : (prop.enforcers === 5 ? 'Made Man Stationed' : `${prop.enforcers} Hit Men`)}</div>
+    </div>
+  `;
+
+  document.getElementById('actionButtons').innerHTML = `<button class="btn" onclick="closeModal('actionModal')">Dismiss</button>`;
+  modal.classList.add('active');
+}
+
+function openInstructionsModal() { document.getElementById('instructionsModal').classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (tabId === 'log') {
+    document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+    document.getElementById('tabLog').style.display = 'block';
+    document.getElementById('tabPortfolio').style.display = 'none';
+  } else {
+    document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+    document.getElementById('tabLog').style.display = 'none';
+    document.getElementById('tabPortfolio').style.display = 'block';
+    renderPortfolio();
+  }
+}
+
+/* ==========================================================================
+   ONLINE MULTIPLAYER LAYER
+   --------------------------------------------------------------------------
+   Topology: star. The host's device is the single source of truth for cash,
+   rackets, tokens, turn order and the log. Guests render pushed snapshots and
+   relay their button presses back to the host.
+
+   Transport: WebRTC data channels brokered by PeerJS. The 4-digit code is
+   namespace-prefixed into a room id, so a code of "4821" becomes the peer id
+   bgb-chicagopoly-v35-4821 anywhere in the world.
+
+   Sign-on order = seat order = mobster assignment:
+      Seat 1  Al Capone   (the host)
+      Seat 2  Johnny Torrio
+      Seat 3  Frank Nitti
+      Seat 4  Bugs Moran
+   A fifth connection is refused with a GAME IS FULL notice.
+   ========================================================================== */
+
+const NET_PREFIX  = 'bgb-chicagopoly-v35-';
+const MAX_PLAYERS = 4;
+
+/* STUN alone covers most home and mobile networks. If two players are both
+   behind symmetric / carrier-grade NAT the direct path fails — add a TURN
+   server here and it is picked up automatically:
+     { urls: 'turn:YOUR.TURN.HOST:3478', username: 'user', credential: 'pass' } */
+const NET_ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:global.stun.twilio.com:3478' }
+];
+
+const PEER_OPTS = { debug: 1, config: { iceServers: NET_ICE_SERVERS } };
+
+/* Authoritative, state-changing entry points. On the host each is followed by
+   a state push; on a guest each is relayed to the host instead of running. */
+const NET_ACTIONS = [
+  'handleRollDice', 'handleEndTurn',
+  'useJailPardon', 'payJailBail', 'rollForDoublesInJail',
+  'claimRacket', 'startAuction', 'placeBid', 'passBid', 'finalizeAuction',
+  'executeTributePayment', 'executeCardAction',
+  'upgradeRacket', 'downgradeRacket', 'toggleMortgage',
+  'executeDeal', 'sendToJail'
+];
+
+/* These take a boss id as their first argument — the host drops any relayed
+   call that tries to act on somebody else's behalf. */
+const NET_FIRST_ARG_IS_PLAYER = [
+  'useJailPardon', 'payJailBail', 'rollForDoublesInJail',
+  'claimRacket', 'executeTributePayment', 'executeCardAction',
+  'placeBid', 'passBid'
+];
+
+/* The animated tail of every dice move funnels through these. Broadcasting
+   when they settle guarantees guests get the finished position and the full
+   wire log, even when a caller forgets to await. */
+const NET_SETTLE_HOOKS = ['executeDiceRollAndMove', 'hopMovePlayer'];
+
+/* Turn-scoped actions: only the boss whose move it actually is may trigger
+   them, so a spectator cannot buy the active boss's racket for them. Bidding
+   and deal-making are deliberately absent — anyone at the table may do those. */
+const NET_ACTOR_MUST_BE_ACTIVE = [
+  'handleRollDice', 'handleEndTurn',
+  'useJailPardon', 'payJailBail', 'rollForDoublesInJail',
+  'claimRacket', 'startAuction',
+  'executeTributePayment', 'executeCardAction',
+  'upgradeRacket', 'downgradeRacket', 'toggleMortgage', 'sendToJail'
+];
+
+const Net = {
+  mode: 'local',                     // 'local' | 'host' | 'client'
+  code: null,
+  peer: null,
+  seats: [null, null, null, null],   // index === sign-on order; seat 0 is the host
+  seatIdentity: [null, null, null, null], // which guest holds each seat, so they can reclaim it
+  dropTimers: {},                    // playerId -> pending elimination timeout
+  conns: [],                         // host:  [{ conn, playerId, identity }]
+  hostConn: null,                    // client: link up to the host
+  identity: null,                    // this browser's guest identity token
+  myPlayerId: null,
+  gameStarted: false,
+  boardRendered: false,
+  relaying: false,          // true while the host runs an action a guest sent us
+  losingLink: false,        // guard so a dead link is only handled once
+  lastState: null,          // guest: previous snapshot, for diffing sound cues
+  lastModalKey: null,
+  dismissedModalKey: null
+};
+
+/* ------------------------------------------------------------------ helpers */
+function toast(msg, ms) {
+  const el = document.getElementById('netToast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), ms || 2800);
+}
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function bossById(id) { return ALL_BOSSES.find(b => b.id === id) || null; }
+function seatName(id) { const b = bossById(id); return b ? b.name : '?'; }
+function seatColor(id) { const b = bossById(id); return b ? b.color : '#666'; }
+function rosterIds() { return Net.seats.filter(id => id !== null); }
+function takenSeats() { return Net.seats.filter(id => id !== null).length; }
+function randomCode() { return String(Math.floor(1000 + Math.random() * 9000)); }
+
+function sendToAll(payload) {
+  Net.conns.forEach(link => {
+    try { if (link.conn && link.conn.open) link.conn.send(payload); } catch (e) { /* link gone */ }
+  });
+}
+
+/* A WebRTC link can die without PeerJS raising 'close': conn.open stays true,
+   the data channel can even still read 'open', and every action sent
+   afterwards vanishes with no error. Always test the real transport. */
+function netLinkAlive(conn) {
+  if (!conn) return false;
+  try {
+    const pc = conn.peerConnection;
+    if (pc) {
+      const cs = pc.connectionState, is = pc.iceConnectionState;
+      if (cs === 'failed' || cs === 'closed' || is === 'failed' || is === 'closed') return false;
+    }
+    if (conn.dataChannel && conn.dataChannel.readyState !== 'open') return false;
+  } catch (e) { return false; }
+  return !!conn.open;
+}
+
+function sendToHost(payload) {
+  if (!netLinkAlive(Net.hostConn)) { netLinkLost(); return; }
+  try { Net.hostConn.send(payload); }
+  catch (e) { netLinkLost(); }
+}
+
+/* Watches the real transport on both sides. Without this a dead link sits
+   there looking healthy and the game freezes with no explanation. */
+let _netWatchdog = null;
+function initLinkWatchdog() {
+  clearInterval(_netWatchdog);
+  _netWatchdog = setInterval(() => {
+    if (Net.mode === 'client') {
+      if (Net.hostConn && !netLinkAlive(Net.hostConn)) netLinkLost();
+    } else if (Net.mode === 'host') {
+      Net.conns.slice().forEach(link => { if (!netLinkAlive(link.conn)) handleClientDrop(link); });
+    }
+  }, 4000);
+}
+
+/* This browser's guest identity, so a dropped boss can take its own seat back
+   rather than being turned away as a mid-game newcomer. Survives a reload in
+   the same tab; a brand new tab starts fresh. */
+function myIdentity() {
+  if (Net.identity) return Net.identity;
+  let id = null;
+  try { id = sessionStorage.getItem('chicagopoly_guest_id'); } catch (e) {}
+  if (!id) {
+    id = 'g' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    try { sessionStorage.setItem('chicagopoly_guest_id', id); } catch (e) {}
+  }
+  Net.identity = id;
+  return id;
+}
+
+/* Guest side: the link to the host died. Say so, then try to get back in. */
+function netLinkLost() {
+  if (Net.mode !== 'client' || Net.losingLink) return;
+  const code = Net.code;
+  Net.losingLink = true;
+
+  toast('Connection to the host dropped — trying to rejoin room ' + code + '…', 4500);
+  logEvent('⚠️ Lost the connection to the host. Trying to rejoin room ' + code + '…', 'crime');
+
+  try { if (Net.hostConn) Net.hostConn.close(); } catch (e) {}
+  try { if (Net.peer) Net.peer.destroy(); } catch (e) {}
+  Net.hostConn = null;
+  Net.peer = null;
+  Net.mode = 'local';
+  Net.code = null;
+  const pill = document.getElementById('netPill');
+  if (pill) pill.classList.add('hidden');
+
+  setTimeout(() => {
+    Net.losingLink = false;
+    if (code) joinRoom(code);
+  }, 1600);
+}
+
+function setNetPill(state, text) {
+  const pill = document.getElementById('netPill');
+  const txt = document.getElementById('netPillText');
+  if (!pill || !txt) return;
+  pill.classList.remove('hidden', 'live', 'dead');
+  if (state === 'live') pill.classList.add('live');
+  else if (state === 'dead') pill.classList.add('dead');
+  txt.textContent = text || '';
+}
+
+function updateNavIdentity() {
+  const pill = document.getElementById('netPill');
+  if (Net.mode === 'local') { if (pill) pill.classList.add('hidden'); return; }
+  const role = Net.mode === 'host' ? 'Host' : 'Guest';
+  setNetPill('live', `Room ${Net.code} · ${role} · ${seatName(Net.myPlayerId)}`);
+}
+
+function updateDiceFaces(d) {
+  const icons = ["", "⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+  const a = document.getElementById('die1'), b = document.getElementById('die2');
+  if (a && icons[d[0]]) a.innerText = icons[d[0]];
+  if (b && icons[d[1]]) b.innerText = icons[d[1]];
+}
+
+/* --------------------------------------------------- entry / create / join */
+function openEntryScreen() {
+  closeModal('createModal');
+  closeModal('joinModal');
+  closeModal('lobbyModal');
+  document.getElementById('entryModal').classList.add('active');
+}
+
+function startLocalGame() {
+  closeModal('entryModal');
+  Net.mode = 'local';
+  updateNavIdentity();
+  openSetupModal();
+}
+
+function openCreateGame() {
+  closeModal('entryModal');
+  const inp = document.getElementById('hostCodeInput');
+  if (inp && !inp.value) inp.value = randomCode();
+  document.getElementById('createError').textContent = '';
+  document.getElementById('createModal').classList.add('active');
+  setTimeout(() => { if (inp) inp.focus(); }, 60);
+}
+
+function openJoinGame() {
+  closeModal('entryModal');
+  document.getElementById('joinError').textContent = '';
+  document.getElementById('joinModal').classList.add('active');
+  const inp = document.getElementById('joinCodeInput');
+  setTimeout(() => { if (inp) inp.focus(); }, 60);
+}
+
+function readCode(inputId, errorId) {
+  const raw = (document.getElementById(inputId).value || '').replace(/\D/g, '');
+  if (raw.length !== 4) {
+    document.getElementById(errorId).textContent = 'Enter exactly 4 digits (0–9).';
+    return null;
+  }
+  return raw;
+}
+
+/* ----------------------------------------------------------------- host side */
+function hostGame() {
+  if (typeof Peer === 'undefined') {
+    document.getElementById('createError').textContent =
+      'Networking library unavailable — check your internet, or use Pass & Play.';
+    return;
+  }
+  // Runs inside a click, so this is the moment to unlock Web Audio.
+  try { SoundFX.init(); } catch (e) {}
+  const code = readCode('hostCodeInput', 'createError');
+  if (!code) return;
+  document.getElementById('createError').textContent = '';
+  closeModal('createModal');
+  setNetPill('connecting', 'Opening room ' + code);
+
+  let peer;
+  try { peer = new Peer(NET_PREFIX + code, PEER_OPTS); }
+  catch (e) {
+    document.getElementById('createError').textContent = 'Could not open the syndicate line.';
+    openCreateGame();
+    return;
+  }
+
+  Net.mode = 'host';
+  Net.peer = peer;
+  Net.code = code;
+  Net.seats = [ALL_BOSSES[0].id, null, null, null];
+  Net.myPlayerId = ALL_BOSSES[0].id;
+  Net.conns = [];
+  Net.gameStarted = false;
+
+  peer.on('open', () => {
+    setNetPill('live', 'Room ' + code);
+    updateNavIdentity();
+    renderLobby();
+    document.getElementById('lobbyModal').classList.add('active');
+    toast('Room ' + code + ' is open — bosses may sign on.');
+  });
+
+  peer.on('connection', conn => {
+    const link = { conn: conn, playerId: null, admitted: false };
+
+    conn.on('data', data => { if (link.admitted) handleHostData(link, data); });
+    conn.on('close', () => { if (link.admitted) handleClientDrop(link); });
+    conn.on('error', () => { if (link.admitted) handleClientDrop(link); });
+
+    conn.on('open', () => {
+      const identity = (conn.metadata && conn.metadata.identity) || null;
+      link.identity = identity;
+
+      // A boss whose link dropped may take its own seat back, provided it
+      // gets here before the grace period expires.
+      let slot = -1;
+      if (identity) {
+        for (let i = 1; i < MAX_PLAYERS; i++) {
+          if (Net.seats[i] !== null && Net.seatIdentity[i] === identity &&
+              !Net.conns.some(c => c.playerId === Net.seats[i])) { slot = i; break; }
+        }
+      }
+      const resuming = (slot >= 0);
+
+      if (!resuming) {
+        // Genuinely new: the war is already under way — no mid-game reinforcements.
+        if (Net.gameStarted) {
+          try { conn.send({ type: 'inprogress' }); } catch (e) {}
+          setTimeout(() => { try { conn.close(); } catch (e) {} }, 900);
+          return;
+        }
+        // Fifth boss: the game is full.
+        if (takenSeats() >= MAX_PLAYERS) {
+          try { conn.send({ type: 'full', max: MAX_PLAYERS }); } catch (e) {}
+          setTimeout(() => { try { conn.close(); } catch (e) {} }, 900);
+          logEvent('A fifth boss tried to sign on — the game is full (4/4).', 'crime');
+          toast('Game is full — a fifth boss was turned away.');
+          return;
+        }
+        // Sign-on order decides the seat, and the seat decides the mobster.
+        slot = Net.seats.indexOf(null);
+        if (slot < 0) { try { conn.send({ type: 'full', max: MAX_PLAYERS }); } catch (e) {} return; }
+        Net.seats[slot] = ALL_BOSSES[slot].id;
+      }
+
+      const bossId = Net.seats[slot];
+      Net.seatIdentity[slot] = identity;
+      link.playerId = bossId;
+      link.admitted = true;
+      Net.conns.push(link);
+
+      // They made it back — cancel any pending elimination.
+      if (Net.dropTimers[bossId]) { clearTimeout(Net.dropTimers[bossId]); delete Net.dropTimers[bossId]; }
+
+      try {
+        conn.send({
+          type: 'welcome', playerId: bossId, slot: slot, resumed: resuming,
+          code: Net.code, seats: Net.seats.slice(), max: MAX_PLAYERS
+        });
+      } catch (e) {}
+
+      if (resuming) {
+        logEvent(`Boss ${ALL_BOSSES[slot].name} reconnected and took back their seat.`, 'system');
+        toast(`Boss ${ALL_BOSSES[slot].name} reconnected.`);
+        broadcastState();
+        publishModal();
+      } else {
+        logEvent(`Boss ${ALL_BOSSES[slot].name} signed on (slot ${slot + 1}).`, 'system');
+      }
+      renderLobby();
+      broadcastLobby();
+    });
+  });
+
+  peer.on('error', err => {
+    const t = err && err.type;
+    if (t === 'unavailable-id') {
+      Net.mode = 'local'; Net.code = null; Net.peer = null;
+      setNetPill('dead', 'Code in use');
+      openCreateGame();
+      document.getElementById('createError').textContent =
+        'That code is already hosting a game. Pick a different 4-digit code.';
+    } else if (t === 'network' || t === 'server-error' || t === 'socket-error') {
+      setNetPill('dead', 'No connection');
+      toast('Syndicate switchboard unreachable — check your internet.');
+    }
+  });
+
+  peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) {} });
+}
+
+function handleHostData(link, data) {
+  if (!data || typeof data !== 'object') return;
+  if (data.type === 'action') runRemoteCall(link, data.call);
+}
+
+function runRemoteCall(link, call) {
+  const head = /^\s*([A-Za-z_$][\w$]*)\s*\(/.exec(call || '');
+  if (!head || NET_ACTIONS.indexOf(head[1]) === -1) return;
+
+  if (NET_FIRST_ARG_IS_PLAYER.indexOf(head[1]) !== -1) {
+    const first = /^\s*[A-Za-z_$][\w$]*\s*\(\s*(-?\d+)/.exec(call);
+    if (!first || parseInt(first[1], 10) !== link.playerId) return;   // not your move to make
+  }
+
+  if (NET_ACTOR_MUST_BE_ACTIVE.indexOf(head[1]) !== -1) {
+    const active = players[activePlayerIndex];
+    if (!active || active.id !== link.playerId) return;               // not your turn
+  }
+
+  // Mark this as a relayed call so the turn guards inside the action itself
+  // (which are there to stop a local spectator clicking) don't reject it —
+  // this guest has already been checked against the active seat above.
+  Net.relaying = true;
+  try { new Function(call)(); }
+  catch (e) { console.warn('Relayed call failed:', call, e); }
+  finally { Net.relaying = false; }
+}
+
+function handleClientDrop(link) {
+  Net.conns = Net.conns.filter(c => c !== link);
+  const bossId = link.playerId;
+  if (bossId === null) return;
+
+  if (!Net.gameStarted) {
+    const slot = Net.seats.indexOf(bossId);
+    if (slot > 0) { Net.seats[slot] = null; Net.seatIdentity[slot] = null; }
+    logEvent(`Boss ${seatName(bossId)} left the lobby.`, 'crime');
+    toast(`Boss ${seatName(bossId)} left the lobby.`);
+    renderLobby();
+    broadcastLobby();
+    return;
+  }
+
+  // Give them a real window to reconnect and reclaim the seat before the
+  // game moves on without them.
+  const GRACE_MS = 25000;
+  logEvent(`Boss ${seatName(bossId)} lost the line — ${GRACE_MS / 1000} seconds to reconnect…`, 'crime');
+  toast(`Boss ${seatName(bossId)} disconnected — ${GRACE_MS / 1000}s to reconnect.`);
+
+  if (Net.dropTimers[bossId]) clearTimeout(Net.dropTimers[bossId]);
+  Net.dropTimers[bossId] = setTimeout(() => {
+    delete Net.dropTimers[bossId];
+    if (Net.conns.some(c => c.playerId === bossId)) return;   // they came back
+    const p = players.find(pl => pl.id === bossId);
+    if (p && !p.bankrupt) {
+      logEvent(`Boss ${p.name} never called back — their crew scatters and the rackets go to the street.`, 'crime');
+      declareBankruptcy(p);
+    }
+    const slot = Net.seats.indexOf(bossId);
+    if (slot > 0) { Net.seats[slot] = null; Net.seatIdentity[slot] = null; }
+    broadcastLobby();
+    broadcastState();
+  }, GRACE_MS);
+}
+
+/* --------------------------------------------------------------- guest side */
+function joinGame() {
+  if (typeof Peer === 'undefined') {
+    document.getElementById('joinError').textContent =
+      'Networking library unavailable — check your internet.';
+    return;
+  }
+  // Unlock Web Audio on this user gesture. Guests may not click anything else
+  // before the host starts rolling, and a suspended context stays silent.
+  try { SoundFX.init(); } catch (e) {}
+  const code = readCode('joinCodeInput', 'joinError');
+  if (!code) return;
+  document.getElementById('joinError').textContent = '';
+  closeModal('joinModal');
+  joinRoom(code);
+}
+
+/* Split out so the link watchdog can rejoin the same room with no form on
+   screen. The guest identity rides along in the connection metadata so the
+   host can give a returning boss its own seat back. */
+function joinRoom(code) {
+  setNetPill('connecting', 'Calling room ' + code);
+
+  let peer;
+  try { peer = new Peer(PEER_OPTS); }
+  catch (e) {
+    document.getElementById('joinError').textContent = 'Could not open the syndicate line.';
+    openJoinGame();
+    return;
+  }
+
+  Net.mode = 'client';
+  Net.peer = peer;
+  Net.code = code;
+  Net.gameStarted = false;
+  let settled = false;
+
+  const fail = (msg) => {
+    if (settled) return;
+    settled = true;
+    Net.mode = 'local'; Net.code = null;
+    setNetPill('dead', 'No connection');
+    try { peer.destroy(); } catch (e) {}
+    openJoinGame();
+    document.getElementById('joinError').textContent = msg;
+  };
+
+  peer.on('open', () => {
+    const conn = peer.connect(NET_PREFIX + code, { reliable: true, metadata: { identity: myIdentity() } });
+    Net.hostConn = conn;
+
+    conn.on('data', data => handleClientData(data));
+    conn.on('open', () => { settled = true; setNetPill('connecting', 'Room ' + code); });
+    conn.on('close', () => { if (settled) clientDisconnected(); else fail('Could not reach that game.'); });
+    conn.on('error', () => { if (!settled) fail('Could not reach that game.'); });
+
+    setTimeout(() => { if (!settled) fail('No game answered code ' + code + '. Check the digits and try again.'); }, 12000);
+  });
+
+  peer.on('error', err => {
+    const t = err && err.type;
+    if (t === 'peer-unavailable') fail('No game is running under code ' + code + '.');
+    else if (t === 'network' || t === 'server-error' || t === 'socket-error') fail('Syndicate switchboard unreachable — check your internet.');
+    else if (!settled) fail('Connection failed (' + (t || 'unknown') + ').');
+  });
+}
+
+function handleClientData(data) {
+  if (!data || typeof data !== 'object') return;
+
+  if (data.type === 'full') {
+    Net.mode = 'local'; Net.code = null;
+    setNetPill('dead', 'Game full');
+    try { Net.peer.destroy(); } catch (e) {}
+    openJoinGame();
+    document.getElementById('joinError').textContent =
+      'GAME IS FULL — that game already has ' + data.max + ' of ' + data.max + ' bosses signed on.';
+    return;
+  }
+
+  if (data.type === 'inprogress') {
+    Net.mode = 'local'; Net.code = null;
+    setNetPill('dead', 'In progress');
+    try { Net.peer.destroy(); } catch (e) {}
+    openJoinGame();
+    document.getElementById('joinError').textContent =
+      'That war is already under way. Wait for it to finish, then sign on to the next one.';
+    return;
+  }
+
+  if (data.type === 'welcome') {
+    Net.myPlayerId = data.playerId;
+    Net.code = data.code;
+    Net.seats = data.seats.slice();
+    setNetPill('live', 'Room ' + data.code);
+    updateNavIdentity();
+    closeModal('entryModal'); closeModal('joinModal'); closeModal('createModal');
+    if (data.resumed) {
+      // Straight back into the running game, not the lobby.
+      closeModal('lobbyModal');
+      logEvent('🔄 Reconnected to the game as ' + seatName(data.playerId) + '.', 'cash');
+      toast('Reconnected as Boss ' + seatName(data.playerId) + '.');
+    } else {
+      document.getElementById('lobbyModal').classList.add('active');
+      renderLobby();
+      toast('Signed on as Boss ' + seatName(data.playerId) + ' — slot ' + (data.slot + 1) + ' of ' + data.max + '.');
+    }
+    return;
+  }
+
+  if (data.type === 'lobby') { Net.seats = data.seats.slice(); renderLobby(); return; }
+
+  if (data.type === 'start') {
+    Net.seats = data.roster.slice();
+    while (Net.seats.length < MAX_PLAYERS) Net.seats.push(null);
+    Net.gameStarted = true;
+    closeModal('lobbyModal');
+    beginWar(data.roster, { broadcast: false });
+    updateNavIdentity();
+    toast('The war begins — you are Boss ' + seatName(Net.myPlayerId) + '.');
+    return;
+  }
+
+  if (data.type === 'state') { applyRemoteState(data); return; }
+  if (data.type === 'modal') { renderMirroredModal(data.modal); return; }
+  if (data.type === 'bye') {
+    toast('The host closed the syndicate line.');
+    leaveMultiplayer();
+    openEntryScreen();
+  }
+}
+
+/* ------------------------------------------------------------ state syncing */
+function snapshotState() {
+  return {
+    type: 'state',
+    players: JSON.parse(JSON.stringify(players)),
+    boardState: JSON.parse(JSON.stringify(boardState)),
+    activePlayerIndex: activePlayerIndex,
+    hasRolled: hasRolled,
+    isMoving: isMoving,
+    currentDice: currentDice.slice(),
+    chosenPlayerCount: chosenPlayerCount,
+    log: (document.getElementById('gameLog') || {}).innerHTML || ''
+  };
+}
+
+function broadcastState() {
+  if (Net.mode !== 'host' || !Net.gameStarted) return;
+  sendToAll(snapshotState());
+}
+
+/* Coalesce bursts of state changes (a hop animation fires dozens) into one
+   push, and stream the token's progress so guests watch it move. */
+let _netPushTimer = null;
+function schedulePush(delay) {
+  if (Net.mode !== 'host' || !Net.gameStarted) return;
+  clearTimeout(_netPushTimer);
+  _netPushTimer = setTimeout(() => { broadcastState(); publishModal(); }, delay || 140);
+}
+
+function broadcastLobby() {
+  if (Net.mode !== 'host') return;
+  sendToAll({ type: 'lobby', seats: Net.seats.slice(), code: Net.code, max: MAX_PLAYERS });
+}
+
+/* --------------------------------------------------- guest sound cues ---- */
+/* Every SoundFX call in this game sits inside a function that only ever runs
+   on the host: guests render pushed snapshots and never execute the logic
+   themselves, so a guest device was silent by construction. Derive the same
+   cues on the guest by diffing each snapshot against the one before it. */
+function playGuestSounds(prev, next) {
+  if (!prev || !next) return;
+  try {
+    const pd = prev.currentDice || [1, 1];
+    const nd = next.currentDice || [1, 1];
+    const diceChanged = (pd[0] !== nd[0] || pd[1] !== nd[1]);
+
+    let moved = false, jailed = false, cashed = false;
+    next.players.forEach((p, i) => {
+      const q = prev.players[i];
+      if (!q) return;
+      if (!p.bankrupt && ((p.position - q.position) + 40) % 40 !== 0) moved = true;
+      if (p.inJail && !q.inJail) jailed = true;
+      // The host chimes on any money movement (buy, tribute, tax, passing GO),
+      // not just income — so match that rather than only cueing on gains.
+      if (!p.bankrupt && p.cash !== q.cash) cashed = true;
+    });
+
+    if (diceChanged) SoundFX.playDiceRoll();
+    if (moved) SoundFX.playHop();
+    if (cashed) SoundFX.playCash();
+    if (jailed) SoundFX.playArrest();
+  } catch (e) { /* this browser has no Web Audio */ }
+}
+
+function applyRemoteState(s) {
+  if (Net.mode !== 'client') return;
+
+  // Snapshot only the fields we diff, so the cue check never aliases `players`.
+  const prev = Net.lastState;
+  const next = {
+    players: (s.players || []).map(p => ({
+      position: p.position, cash: p.cash, inJail: p.inJail, bankrupt: p.bankrupt
+    })),
+    currentDice: (s.currentDice || [1, 1]).slice()
+  };
+  Net.lastState = next;
+
+  players = s.players;
+  boardState = s.boardState;
+  activePlayerIndex = s.activePlayerIndex;
+  hasRolled = s.hasRolled;
+  isMoving = s.isMoving;
+  currentDice = s.currentDice || [1, 1];
+  chosenPlayerCount = players.length;
+  Net.gameStarted = true;
+
+  if (!Net.boardRendered) { Net.boardRendered = true; renderBoard(); }
+  updateTokens();
+  updateTileEnforcers();
+  updateOwnershipBadges();
+  renderPlayers();
+  renderPortfolio();
+  updateDiceFaces(currentDice);
+
+  const log = document.getElementById('gameLog');
+  if (log && log.innerHTML !== s.log) log.innerHTML = s.log;
+
+  playGuestSounds(prev, next);
+  syncTurnButtons();
+}
+
+function isMyTurn() {
+  const p = players[activePlayerIndex];
+  return !!(p && p.id === Net.myPlayerId && !p.bankrupt);
+}
+
+function syncTurnButtons() {
+  if (Net.mode === 'local') return;
+  const roll = document.getElementById('btnRoll');
+  const end = document.getElementById('btnEndTurn');
+  if (!roll || !end) return;
+
+  const mine = isMyTurn();
+  roll.disabled = !mine || hasRolled || isMoving;
+  end.disabled = !mine || !hasRolled || isMoving;
+
+  const banner = document.getElementById('turnAnnouncer');
+  if (banner && !mine && Net.gameStarted && players.length) {
+    const act = players[activePlayerIndex];
+    if (act) {
+      banner.innerText = 'Waiting on Boss ' + act.name;
+      banner.style.color = act.color;
+    }
+  }
+}
+
+/* --------------------------------------------------------- modal mirroring */
+/* Every decision screen in the game is built inside #actionModal or
+   #tradeModal. Watching those two nodes means guests see exactly the same
+   prompt as the host, with no per-screen plumbing. */
+function ensureModalObserver() {
+  const obs = new MutationObserver(() => {
+    if (Net.mode !== 'host') return;
+    clearTimeout(ensureModalObserver._t);
+    ensureModalObserver._t = setTimeout(publishModal, 70);
+  });
+  ['actionModal', 'tradeModal'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) obs.observe(el, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true, characterData: true });
+  });
+}
+
+function captureModal() {
+  const openId = ['actionModal', 'tradeModal'].find(id => {
+    const el = document.getElementById(id);
+    return el && el.classList.contains('active');
+  });
+  if (!openId) return { open: false };
+
+  const box = document.getElementById(openId);
+  const header = box.querySelector('.modal-header');
+  const title = header ? header.textContent.trim() : 'Syndicate Decision';
+
+  let body;
+  if (openId === 'actionModal') {
+    const main = (document.getElementById('actionBody') || {}).innerHTML || '';
+    const actions = (document.getElementById('actionButtons') || {}).innerHTML || '';
+    body = main + (actions.trim()
+      ? '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap;">' + actions + '</div>'
+      : '');
+  } else {
+    body = (document.getElementById('tradeContainer') || {}).innerHTML || '';
+  }
+
+  const buttons = [];
+  box.querySelectorAll('button[onclick]').forEach(b => {
+    buttons.push({ call: b.getAttribute('onclick') || '', label: (b.textContent || '').trim() });
+  });
+
+  return {
+    open: true,
+    id: openId,
+    title: title,
+    body: body,
+    buttons: buttons,
+    global: /Underworld Bidding|RULER OF CHICAGO|Syndicate War/i.test(title)
+  };
+}
+
+function publishModal() {
+  if (Net.mode !== 'host') return;
+  sendToAll({ type: 'modal', modal: captureModal() });
+}
+
+/* Rewrite inline handlers so guest clicks come back to the host instead of
+   running against the guest's local (non-authoritative) state. */
+function neutralizeHandlers(html) {
+  return String(html).replace(/on(click|change|input|keydown)=("|')([\s\S]*?)\2/gi, (m, evt, q, code) => {
+    if (evt.toLowerCase() === 'click') {
+      return 'onclick="' + esc('clientModalAction(' + JSON.stringify(code) + ')') + '"';
+    }
+    return 'on' + evt + '="void 0"';
+  });
+}
+
+/* A mirrored button's call string starts with the acting boss's id for every
+   player-scoped action. If it isn't ours, the host would drop the click, so
+   don't offer it — keeps the guest UI honest about what it can do. */
+function callTargetsAnotherBoss(callStr) {
+  const head = /^\s*([A-Za-z_$][\w$]*)\s*\(\s*(-?\d+)/.exec(callStr || '');
+  if (!head) return false;
+  if (NET_FIRST_ARG_IS_PLAYER.indexOf(head[1]) === -1) return false;
+  return parseInt(head[2], 10) !== Net.myPlayerId;
+}
+
+function mirroredCallOf(btn) {
+  const attr = btn.getAttribute('onclick') || '';
+  const m = /^\s*clientModalAction\(([\s\S]*)\)\s*$/.exec(attr);
+  if (!m) return '';
+  try { return JSON.parse(m[1]); } catch (e) { return ''; }
+}
+
+function renderMirroredModal(modal) {
+  if (Net.mode !== 'client') return;
+
+  if (!modal || !modal.open) {
+    closeModal('actionModal');
+    closeModal('tradeModal');
+    return;
+  }
+
+  const key = [modal.id, modal.title, modal.body.length, modal.buttons.map(b => b.call).join(',')].join('|');
+  if (key === Net.dismissedModalKey) return;
+  const isNewModal = (key !== Net.lastModalKey);
+
+  ['actionModal', 'tradeModal'].forEach(id => { if (id !== modal.id) closeModal(id); });
+
+  const target = document.getElementById(modal.id);
+  if (!target) return;
+
+  const headerSpan = target.querySelector('.modal-header span');
+  if (headerSpan) headerSpan.textContent = modal.title;
+
+  const bodyHost = modal.id === 'tradeModal'
+    ? document.getElementById('tradeContainer')
+    : document.getElementById('actionBody');
+
+  const mine = isMyTurn();
+  const hostOnly = modal.id === 'tradeModal';
+  const canAct = !!modal.global || (mine && !hostOnly);
+
+  bodyHost.innerHTML = neutralizeHandlers(modal.body);
+  // Mirror the host's bidding rules: this guest only drives its own mob.
+  gateAuctionControls(bodyHost);
+
+  let blocked = false;
+  if (!canAct) {
+    bodyHost.querySelectorAll('button').forEach(b => { b.disabled = true; b.style.opacity = '0.4'; });
+    blocked = true;
+  } else {
+    bodyHost.querySelectorAll('button').forEach(b => {
+      if (callTargetsAnotherBoss(mirroredCallOf(b))) { b.disabled = true; b.style.opacity = '0.4'; }
+    });
+  }
+
+  if (blocked) {
+    const active = players[activePlayerIndex];
+    const note = hostOnly
+      ? 'Deal-making is handled on the host device in this build.'
+      : 'Only Boss ' + esc(active ? active.name : '?') + ' can act right now — you are watching the wire.';
+    bodyHost.insertAdjacentHTML('beforeend', '<div class="mirror-note">' + note + '</div>');
+  }
+
+  target.classList.add('active');
+
+  // The host gets a shakedown sting when a rival lands on its turf; give the
+  // guest the same cue, once per prompt rather than on every re-render.
+  if (isNewModal && /Rival Turf Trespass/i.test(modal.title)) {
+    try { SoundFX.playShakedown(); } catch (e) {}
+  }
+
+  Net.lastModalKey = key;
+}
+
+function clientModalAction(call) {
+  call = String(call || '');
+  // Dismissing is pure local UI — never bother the host with it.
+  if (/^\s*closeModal\s*\(/.test(call)) {
+    try { new Function(call)(); } catch (e) {}
+    Net.dismissedModalKey = Net.lastModalKey;
+    return;
+  }
+  sendToHost({ type: 'action', call: call });
+}
+
+/* --------------------------------------------------- action interception */
+function installNetworkWrappers() {
+  NET_ACTIONS.forEach(name => {
+    const original = window[name];
+    if (typeof original !== 'function') return;
+    window[name] = function () {
+      const args = Array.prototype.slice.call(arguments);
+      if (Net.mode === 'client') {
+        sendToHost({
+          type: 'action',
+          call: name + '(' + args.map(a => JSON.stringify(a)).join(', ') + ')'
+        });
+        return undefined;
+      }
+      const pack = () => {
+        if (Net.mode === 'host' && Net.gameStarted) {
+          broadcastState(); publishModal(); syncTurnButtons();
+        }
+      };
+      const out = original.apply(this, args);
+      if (out && typeof out.then === 'function') {
+        return out.then(v => { pack(); return v; }, e => { pack(); throw e; });
+      }
+      pack();
+      return out;
+    };
+  });
+
+  // Only the boss whose turn it is may touch Roll Dice / End Turn.
+  const originalRenderPlayers = window.renderPlayers;
+  if (typeof originalRenderPlayers === 'function') {
+    window.renderPlayers = function () {
+      const out = originalRenderPlayers.apply(this, arguments);
+      setTimeout(syncTurnButtons, 0);
+      return out;
+    };
+  }
+
+  // The animated tail of a move: push once it settles so guests get the
+  // finished position and the complete wire log, even if the caller of the
+  // animation forgot to await it.
+  NET_SETTLE_HOOKS.forEach(name => {
+    const original = window[name];
+    if (typeof original !== 'function') return;
+    window[name] = function () {
+      const out = original.apply(this, arguments);
+      const settle = () => { schedulePush(200); setTimeout(syncTurnButtons, 0); };
+      if (out && typeof out.then === 'function') out.then(settle, settle);
+      else setTimeout(settle, 0);
+      return out;
+    };
+  });
+
+  // updateTokens() runs once per hop — throttled into a live position feed.
+  const originalUpdateTokens = window.updateTokens;
+  if (typeof originalUpdateTokens === 'function') {
+    window.updateTokens = function () {
+      const out = originalUpdateTokens.apply(this, arguments);
+      schedulePush(120);
+      return out;
+    };
+  }
+}
+
+/* ----------------------------------------------------------- session teardown */
+function leaveMultiplayer() {
+  if (Net.mode === 'host') sendToAll({ type: 'bye' });
+  try { if (Net.hostConn) Net.hostConn.close(); } catch (e) {}
+  try { if (Net.peer) Net.peer.destroy(); } catch (e) {}
+
+  Net.mode = 'local';
+  Net.code = null;
+  Net.peer = null;
+  Net.hostConn = null;
+  Net.conns = [];
+  Net.myPlayerId = null;
+  Net.seats = [null, null, null, null];
+  Net.seatIdentity = [null, null, null, null];
+  Net.losingLink = false;
+  Object.keys(Net.dropTimers).forEach(k => clearTimeout(Net.dropTimers[k]));
+  Net.dropTimers = {};
+  Net.gameStarted = false;
+  Net.boardRendered = false;
+  Net.lastState = null;
+  Net.lastModalKey = null;
+  Net.dismissedModalKey = null;
+
+  ['lobbyModal', 'createModal', 'joinModal', 'entryModal'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+  const pill = document.getElementById('netPill');
+  if (pill) pill.classList.add('hidden');
+}
+
+function clientDisconnected() {
+  // The link to the host ended, whether or not PeerJS raised an event for it.
+  // Try to get back in rather than dumping the player to the start screen.
+  if (Net.losingLink) return;
+  netLinkLost();
+}
+
+/* -------------------------------------------------------------------- lobby */
+function renderLobby() {
+  const codeEl = document.getElementById('lobbyCodeText');
+  if (codeEl) codeEl.textContent = Net.code || '----';
+
+  const wrap = document.getElementById('lobbyRoster');
+  if (wrap) {
+    let html = '';
+    for (let slot = 0; slot < MAX_PLAYERS; slot++) {
+      const bossId = Net.seats[slot];
+      if (bossId === null || bossId === undefined) {
+        html += '<div class="lobby-seat empty">Slot ' + (slot + 1) + ' — open</div>';
+        continue;
+      }
+      const isMe = (bossId === Net.myPlayerId);
+      html += '<div class="lobby-seat" style="border-left-color:' + seatColor(bossId) + ';">'
+        + '<span class="player-dot" style="background:' + seatColor(bossId) + '"></span>'
+        + '<span><strong>' + esc(seatName(bossId)) + '</strong></span>'
+        + '<span class="seat-tag' + (isMe ? ' you' : '') + '">'
+        + (slot === 0 ? 'Host' : 'Slot ' + (slot + 1)) + (isMe ? ' · You' : '')
+        + '</span></div>';
+    }
+    wrap.innerHTML = html;
+  }
+
+  const count = takenSeats();
+  const status = document.getElementById('lobbyStatus');
+  const actions = document.getElementById('lobbyActions');
+
+  if (Net.mode === 'host') {
+    if (status) {
+      status.textContent = 'Wait for other players to join or Begin Syndicate War to end logins.';
+      status.classList.add('lobby-flash');
+    }
+    if (actions) actions.innerHTML =
+      '<button class="btn" style="width:100%; padding:12px; font-size:0.92rem;" onclick="hostBeginWar()">'
+      + 'Begin Syndicate War (' + count + ' Boss' + (count === 1 ? '' : 'es') + ')</button>';
+  } else {
+    if (status) {
+      status.classList.remove('lobby-flash');
+      status.textContent = 'Waiting for the host to begin… (' + count + '/' + MAX_PLAYERS + ' signed on)';
+    }
+    if (actions) actions.innerHTML =
+      '<button class="btn btn-crimson" style="width:100%; padding:10px;" onclick="leaveMultiplayer(); openEntryScreen();">'
+      + 'Leave Game</button>';
+  }
+}
+
+function hostBeginWar() {
+  if (Net.mode !== 'host') return;
+  if (takenSeats() < 1) { toast('Nobody has signed on yet.'); return; }
+  beginWar(rosterIds(), { broadcast: true });
+}
+
+/* ------------------------------------------------------------------- wiring */
+function initNetworking() {
+  installNetworkWrappers();
+  ensureModalObserver();
+  initLinkWatchdog();
+
+  [['hostCodeInput', hostGame], ['joinCodeInput', joinGame]].forEach(pair => {
+    const el = document.getElementById(pair[0]);
+    if (!el) return;
+    el.addEventListener('input', () => { el.value = el.value.replace(/\D/g, '').slice(0, 4); });
+    el.addEventListener('keydown', ev => { if (ev.key === 'Enter') pair[1](); });
+  });
+}
+
+window.onload = () => {
+  initNetworking();
+  splashTimeout = setTimeout(() => {
+    dismissSplash();
+  }, 5000);
+};
+</script>
+</body>
+</html>
